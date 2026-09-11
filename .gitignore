@@ -58,3 +58,13 @@ Thumbs.db
 # Docker volumes and local data directories
 monitoring/grafana_data/
 monitoring/prometheus_data/
+
+# Model checkpoints (>100MB large binaries - hosted via GitHub Releases/Drive)
+model/weights/*.pt
+model/weights/*.safetensors
+model/weights/*.bin
+model/weights/*.onnx
+
+# Local raw and benchmark datasets
+data/
+
