@@ -55,7 +55,6 @@ jobs:
           username: ${{ secrets.EC2_USER || 'ubuntu' }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          script_stop: true
           script: |
             # Exit immediately if a command exits with a non-zero status
             set -e
