@@ -60,14 +60,18 @@ jobs:
             # Exit immediately if a command exits with a non-zero status
             set -e
 
+            # Clone repository if it does not already exist on EC2
+            if [ ! -d "$HOME/SignalScope" ]; then
+              echo "=== Initializing repository on EC2 ==="
+              git clone git@github.com:mihir021/SignalScope.git "$HOME/SignalScope"
+            fi
+
             # Navigate to the SignalScope workspace directory on EC2
-            cd ~/SignalScope || cd ~/signalscope || {
-              echo "SignalScope directory not found in home folder. Please ensure the repository is cloned first."
-              exit 1
-            }
+            cd "$HOME/SignalScope"
 
             echo "=== Pulling latest changes from main branch ==="
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
 
             echo "=== Tearing down existing containers ==="
             docker compose down
