@@ -43,6 +43,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # ------------------------------------------------------------------------------
 COPY app /app/app
 COPY model /app/model
+COPY tests /app/tests
 
 # ------------------------------------------------------------------------------
 # Network and Container Configuration

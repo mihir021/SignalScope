@@ -17,3 +17,9 @@ prometheus-fastapi-instrumentator>=7.0.0
 
 # Pillow (PIL Fork): Python Imaging Library for loading, validating, and preprocessing input images
 pillow>=10.4.0
+
+# HTTPX: Required by FastAPI TestClient for synchronous and asynchronous integration testing
+httpx>=0.27.0
+
+# Pytest: Framework for automated unit and API testing in CI pipelines
+pytest>=8.0.0

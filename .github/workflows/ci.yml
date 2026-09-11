@@ -1,0 +1,140 @@
+# ==============================================================================
+# GitHub Actions CI Workflow - Pull Request & Branch Quality Gate
+# Validates merge conflicts, Python code quality, automated test suite, and Docker build
+# Runs on every Pull Request to 'main' and on every push to feature branches
+# ==============================================================================
+
+name: CI - PR Quality Gate & Conflict Check
+
+on:
+  # Trigger on Pull Requests targeting the main branch
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+  # Trigger on pushes to any feature branch (excluding main, which runs deploy.yml)
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Merge Conflict & Branch Integrity Check
+  # Verifies that this branch can cleanly merge into main without conflicts
+  # ----------------------------------------------------------------------------
+  check-merge-conflicts:
+    name: Check Merge Conflicts & Secret Leaks
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository with full git history (depth 0) to compare trees
+      - name: Checkout Repository with Full History
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Step 2: Fetch the target main branch to compare against
+      - name: Fetch Target Branch (main)
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          echo "Main branch fetched successfully."
+
+      # Step 3: Run git merge-tree to test for merge conflicts against origin/main
+      - name: Verify Clean Mergeability with Main
+        run: |
+          echo "=== Checking for Merge Conflicts against origin/main ==="
+          
+          # git merge-tree --write-tree performs a 3-way merge check in memory
+          # Returns exit code 0 if cleanly mergeable, or non-zero if conflicts exist
+          if ! git merge-tree --write-tree origin/main HEAD > /dev/null 2>&1; then
+            echo "❌ ============================================================="
+            echo "❌ MERGE CONFLICT DETECTED!"
+            echo "❌ This branch cannot be merged into 'main' cleanly."
+            echo "❌ ============================================================="
+            echo "To resolve this conflict, run the following on your branch:"
+            echo "  git fetch origin main"
+            echo "  git merge origin/main"
+            echo "  # Resolve conflict markers in your editor, then commit & push"
+            echo "❌ ============================================================="
+            exit 1
+          fi
+          echo "✅ Clean merge verified: No merge conflicts detected with main branch."
+
+      # Step 4: Scan for accidentally committed private keys or secrets
+      - name: Scan for Accidental Secrets & Private Keys
+        run: |
+          echo "=== Scanning for Sensitive Files (.pem, .key, .env) ==="
+          LEAKED_FILES=$(git ls-files | grep -E "(\.pem|\.key|id_rsa|\.env)$" || true)
+          if [ -n "$LEAKED_FILES" ]; then
+            echo "❌ ERROR: Sensitive files detected in repository tracking:"
+            echo "$LEAKED_FILES"
+            echo "Remove them using 'git rm --cached <file>' and add to .gitignore!"
+            exit 1
+          fi
+          echo "✅ No sensitive credentials detected in repository files."
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Python Code Quality & Automated Unit Tests
+  # Runs flake8 syntax checks and pytest suite for API endpoints
+  # ----------------------------------------------------------------------------
+  test-and-lint:
+    name: Lint & Automated Pytest Suite
+    needs: check-merge-conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.11 environment with dependency caching
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # Step 3: Install project dependencies and testing tools
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+          pip install -r requirements.txt
+
+      # Step 4: Run linter for syntax errors and undefined names
+      - name: Lint Code with Flake8
+        run: |
+          # Stop build if there are Python syntax errors or undefined names
+          flake8 app model tests --count --select=E9,F63,F7,F82 --show-source --statistics
+          echo "✅ Flake8 syntax checks passed."
+
+      # Step 5: Execute automated unit and API test suite
+      - name: Run Pytest Test Suite
+        run: |
+          pytest tests/ -v
+          echo "✅ All unit and API tests passed successfully."
+
+  # ----------------------------------------------------------------------------
+  # Job 3: Docker Container Build Verification
+  # Verifies that the Docker container builds without errors
+  # ----------------------------------------------------------------------------
+  verify-docker-build:
+    name: Verify Docker Container Build
+    needs: check-merge-conflicts
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Build application Docker container
+      - name: Build Application Image
+        run: |
+          docker build -t signalscope-app:pr-test .
+          echo "✅ Docker image built successfully with zero errors."
