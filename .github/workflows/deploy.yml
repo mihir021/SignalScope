@@ -1,0 +1,81 @@
+# ==============================================================================
+# GitHub Actions CI/CD Pipeline for SignalScope
+# Automatically tests, builds Docker image, and deploys to AWS EC2 via SSH
+# ==============================================================================
+
+name: CI/CD Pipeline - Build and Deploy to AWS EC2
+
+# Trigger pipeline on push to the main branch or manual trigger via workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # Job 1: Build & Verify Docker Image
+  # Tests that the application Docker image builds successfully before deploying
+  # ----------------------------------------------------------------------------
+  build:
+    name: Build & Verify Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository code using latest checkout action
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx for modern caching and multi-platform build support
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Build the Docker image locally on GitHub runner to validate correctness
+      - name: Build Application Docker Image
+        run: |
+          docker build -t signalscope-app:latest .
+          echo "Docker image built successfully."
+
+  # ----------------------------------------------------------------------------
+  # Job 2: Deploy to AWS EC2 Instance via SSH
+  # Connects to EC2 using repository secrets and updates the running containers
+  # ----------------------------------------------------------------------------
+  deploy:
+    name: Deploy to AWS EC2
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      # Step 1: Execute deployment commands remotely on EC2 via SSH
+      - name: SSH into AWS EC2 and Redeploy
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            # Exit immediately if a command exits with a non-zero status
+            set -e
+
+            # Navigate to the SignalScope workspace directory on EC2
+            cd ~/SignalScope || cd ~/signalscope || {
+              echo "SignalScope directory not found in home folder. Please ensure the repository is cloned first."
+              exit 1
+            }
+
+            echo "=== Pulling latest changes from main branch ==="
+            git pull origin main
+
+            echo "=== Tearing down existing containers ==="
+            docker compose down
+
+            echo "=== Rebuilding and starting updated containers ==="
+            docker compose up -d --build
+
+            echo "=== Cleaning up unused dangling Docker images ==="
+            docker image prune -f
+
+            echo "=== SignalScope deployment completed successfully! ==="

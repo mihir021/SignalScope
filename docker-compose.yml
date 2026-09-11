@@ -1,0 +1,97 @@
+# ==============================================================================
+# Docker Compose Deployment for SignalScope
+# Multi-container orchestration:
+#   1. app: FastAPI Real vs Fake Image Detector API
+#   2. prometheus: Time-series database scraping /metrics from the app
+#   3. grafana: Analytics dashboard for real-time visualization
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Service 1: SignalScope FastAPI Application
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signalscope-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - signalscope-net
+
+  # ----------------------------------------------------------------------------
+  # Service 2: Prometheus Metrics Collector
+  # ----------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: signalscope-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      # Mount the Prometheus configuration into the container
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Persist scraped time-series metric data
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - signalscope-net
+
+  # ----------------------------------------------------------------------------
+  # Service 3: Grafana Metrics Visualization Dashboard
+  # ----------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: signalscope-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Initial Admin credentials (can be modified or passed via .env in production)
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      # Persistent volume for Grafana dashboards, plugins, and settings
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - signalscope-net
+
+# ------------------------------------------------------------------------------
+# Isolated Bridge Network
+# Enables internal DNS service discovery between containers (app, prometheus, grafana)
+# ------------------------------------------------------------------------------
+networks:
+  signalscope-net:
+    driver: bridge
+
+# ------------------------------------------------------------------------------
+# Named Persistent Storage Volumes
+# Ensures metrics history and Grafana dashboards persist across container restarts
+# ------------------------------------------------------------------------------
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

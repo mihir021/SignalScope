@@ -1,0 +1,19 @@
+# ==============================================================================
+# SignalScope - Core Dependencies
+# Python dependencies for the FastAPI inference service, monitoring, and image handling
+# ==============================================================================
+
+# FastAPI: High-performance modern web framework for building APIs with Python 3.8+
+fastapi>=0.115.0
+
+# Uvicorn: Lightning-fast ASGI web server implementation used to run FastAPI applications
+uvicorn[standard]>=0.30.0
+
+# Python-Multipart: Required by FastAPI to parse multipart/form-data for file uploads
+python-multipart>=0.0.9
+
+# Prometheus FastAPI Instrumentator: Automatically collects and exposes application metrics at /metrics
+prometheus-fastapi-instrumentator>=7.0.0
+
+# Pillow (PIL Fork): Python Imaging Library for loading, validating, and preprocessing input images
+pillow>=10.4.0
