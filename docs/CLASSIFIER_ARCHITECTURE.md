@@ -114,9 +114,10 @@ SignalScope/
 ├── model/
 │   ├── classifier.py               # DualStreamClassifier PyTorch model (CLIP + Forensic Projection + Fusion)
 │   ├── forensic.py                 # FFT azimuthal profile, SRM noise residual, and sensor autocorrelation
-│   ├── predict.py                  # Core inference pipeline and Forensic-Gated Consensus engine
+│   ├── predict.py                  # Core inference pipeline, EXIF extraction, multimodal matching, and Consensus engine
 │   ├── explain.py                  # ViT LayerCAM saliency hooks and grounded explanation engine
 │   ├── attribution.py              # GeneratorAttributionHead for bonus generator attribution
+│   ├── evaluate.py                 # Comprehensive evaluation & validation metric computation (ROC-AUC, ECE)
 │   ├── dataset.py                  # PyTorch Dataset wrappers and balanced sampling loaders
 │   ├── splits.py                   # Generator-disjoint train/val/test splitting algorithms
 │   ├── train.py                    # Dual-stream training loop with temperature calibration
