@@ -79,3 +79,54 @@ def assert_disjoint(indices_a: np.ndarray, indices_b: np.ndarray, name_a: str = 
             f"'{name_a}' and '{name_b}' splits. Refusing to proceed - "
             f"any metric computed from this split is invalid."
         )
+
+
+def get_generator_disjoint_splits(
+    generator_labels: np.ndarray,
+    unseen_generator_ids: list,
+    val_ratio: float = 0.15,
+    seed: int = 42
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Creates strictly generator-disjoint train/val and unseen test splits (SIH Tie-Breaker #1).
+
+    Args:
+        generator_labels: 1D array of generator IDs (0=Real, 1..K=Synthetic generators)
+        unseen_generator_ids: List of generator IDs strictly reserved for unseen zero-shot evaluation
+        val_ratio: Fraction of seen data to allocate to validation
+        seed: Random seed for reproducibility
+
+    Returns:
+        (seen_train_indices, seen_val_indices, unseen_test_indices)
+    """
+    unseen_set = set(unseen_generator_ids)
+    rng = np.random.RandomState(seed)
+
+    unseen_test_mask = np.isin(generator_labels, list(unseen_set))
+    unseen_test_indices = np.where(unseen_test_mask)[0]
+
+    seen_indices = np.where(~unseen_test_mask)[0]
+    shuffled_seen = rng.permutation(seen_indices)
+
+    val_count = int(len(seen_indices) * val_ratio)
+    seen_val_indices = shuffled_seen[:val_count]
+    seen_train_indices = shuffled_seen[val_count:]
+
+    return seen_train_indices, seen_val_indices, unseen_test_indices
+
+
+def assert_generator_disjoint(
+    seen_generators: list,
+    unseen_generators: list
+) -> None:
+    """
+    Hard runtime guard ensuring zero overlap between seen training generators
+    and unseen evaluation generators.
+    """
+    overlap = set(seen_generators) & set(unseen_generators)
+    if overlap:
+        raise RuntimeError(
+            f"Unseen Generator Leakage detected: Generators {overlap} are present in "
+            f"both seen training and unseen evaluation sets. Violation of SIH §4.1."
+        )
+

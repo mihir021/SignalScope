@@ -1,0 +1,12 @@
+{
+  "multi_class_task": "Generator Family Attribution (Bonus Track B)",
+  "families": [
+    "Stable Diffusion family (SD 1.x / 2.x / SDXL)",
+    "Midjourney family (v5 / v6)",
+    "DALL-E family (DALL-E 2 / 3)",
+    "GAN / Legacy Generative Models"
+  ],
+  "best_validation_accuracy": 0.9833,
+  "total_synthetic_samples": 1500,
+  "validation_samples": 300
+}

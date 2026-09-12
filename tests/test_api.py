@@ -131,3 +131,23 @@ def test_classifier_predict_direct():
     assert result["label"] in ["real", "fake"]
     assert "confidence" in result
     assert isinstance(result["confidence"], (int, float))
+
+
+def test_predict_detailed_endpoint():
+    """
+    Verifies that POST /predict/detailed returns explainability cues and heatmap base64.
+    """
+    image_bytes = create_test_image_bytes("JPEG", size=(128, 128))
+    files = {"file": ("test_explain.jpg", image_bytes, "image/jpeg")}
+
+    response = client.post("/predict/detailed", files=files)
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["status"] == "success"
+    assert "explanation_cues" in data
+    assert "explanation_summary" in data
+    assert "overlay_base64" in data
+    assert len(data["overlay_base64"]) > 100
+    assert "hotspot_region" in data["explanation_cues"]
+

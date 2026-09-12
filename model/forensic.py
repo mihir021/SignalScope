@@ -171,12 +171,36 @@ class ForensicExtractor(nn.Module):
         forensic_vector = np.concatenate([fft_feats, noise_feats]).astype(np.float32)
         return forensic_vector
 
+    def compute_native_sensor_autocorrelation(self, image: Image.Image) -> float:
+        """
+        Computes native spatial autocorrelation of the high-pass noise residual.
+        Real CMOS camera sensor noise is spatially uncorrelated (Poisson/Gaussian i.i.d., AC in [-0.08, 0.08]).
+        AI diffusion & GAN models leave spatial deconvolution correlation artifacts (AC > 0.15).
+        """
+        img_arr = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+        gray = rgb_to_gray(img_arr)
+        denoised = scipy.ndimage.median_filter(gray, size=3)
+        res = gray - denoised
+        h, w = res.shape
+        if h > 2 and w > 2:
+            r1 = res[:-1, :].ravel()
+            r2 = res[1:, :].ravel()
+            std1, std2 = np.std(r1), np.std(r2)
+            if std1 > 1e-6 and std2 > 1e-6:
+                ac = float(np.mean((r1 - np.mean(r1)) * (r2 - np.mean(r2))) / (std1 * std2 + 1e-8))
+            else:
+                ac = 0.0
+        else:
+            ac = 0.0
+        return float(np.clip(ac, -1.0, 1.0))
+
     def extract_diagnostics(self, image: Image.Image) -> dict:
         """
         Extracts 128-d forensic vector along with intermediate 2D diagnostic maps:
         - 2D-FFT log-magnitude spectrum (H, W)
         - 1D radial azimuthal profile (64,)
         - 2D SRM noise residual map (H, W)
+        - Native sensor noise autocorrelation
         """
         image_rgb = image.convert("RGB").resize((224, 224), Image.Resampling.BILINEAR)
         img_arr = np.asarray(image_rgb, dtype=np.float32) / 255.0
@@ -198,12 +222,14 @@ class ForensicExtractor(nn.Module):
         noise_feats = extract_noise_features(img_arr, target_dim=self.noise_dims)
 
         forensic_vector = np.concatenate([radial_profile, noise_feats]).astype(np.float32)
+        native_ac = self.compute_native_sensor_autocorrelation(image)
 
         return {
             "forensic_vector": forensic_vector,
             "fft_spectrum_2d": magnitude,
             "radial_profile": radial_profile,
             "noise_residual_2d": gray_res,
+            "native_sensor_autocorr": native_ac,
         }
 
     def extract_from_tensor_batch(self, tensors: torch.Tensor) -> torch.Tensor:

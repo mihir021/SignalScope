@@ -1,0 +1,58 @@
+{
+  "overall_roc_auc": 0.9974,
+  "overall_macro_f1": 0.9808,
+  "overall_accuracy": 0.9808,
+  "unseen_split_roc_auc": 0.9982,
+  "unseen_split_macro_f1": 0.9757,
+  "unseen_split_accuracy": 0.9798,
+  "tie_breaker_unseen_auc": 0.9982,
+  "unseen_generators_evaluated": [
+    "Midjourney (Unseen)",
+    "DALL-E (Unseen)"
+  ],
+  "per_generator_breakdown": {
+    "Real Photos (COCO)": {
+      "generator_id": 0,
+      "sample_count": 600,
+      "metric_type": "specificity_real_rejection",
+      "score": 0.9717,
+      "is_unseen": false
+    },
+    "Stable Diffusion v1.4": {
+      "generator_id": 1,
+      "sample_count": 120,
+      "metric_type": "detection_recall",
+      "score": 0.9667,
+      "is_unseen": false
+    },
+    "Stable Diffusion v1.5": {
+      "generator_id": 2,
+      "sample_count": 120,
+      "metric_type": "detection_recall",
+      "score": 1.0,
+      "is_unseen": false
+    },
+    "Stable Diffusion v2.0": {
+      "generator_id": 3,
+      "sample_count": 120,
+      "metric_type": "detection_recall",
+      "score": 0.9833,
+      "is_unseen": false
+    },
+    "Midjourney (Unseen)": {
+      "generator_id": 4,
+      "sample_count": 120,
+      "metric_type": "detection_recall",
+      "score": 1.0,
+      "is_unseen": true
+    },
+    "DALL-E (Unseen)": {
+      "generator_id": 5,
+      "sample_count": 120,
+      "metric_type": "detection_recall",
+      "score": 1.0,
+      "is_unseen": true
+    }
+  },
+  "total_samples_evaluated": 1200
+}
