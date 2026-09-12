@@ -151,3 +151,23 @@ def test_predict_detailed_endpoint():
     assert len(data["overlay_base64"]) > 100
     assert "hotspot_region" in data["explanation_cues"]
 
+
+def test_predict_with_caption_and_metadata():
+    """
+    Verifies that POST /predict with optional caption returns multimodal match and EXIF metadata.
+    """
+    image_bytes = create_test_image_bytes("JPEG", size=(128, 128))
+    files = {"file": ("test_sample.jpg", image_bytes, "image/jpeg")}
+    data_payload = {"caption": "a solid color patch"}
+
+    response = client.post("/predict", files=files, data=data_payload)
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["status"] == "success"
+    assert "exif_metadata" in data
+    assert "multimodal_match" in data
+    assert data["multimodal_match"]["caption"] == "a solid color patch"
+    assert "similarity_score" in data["multimodal_match"]
+
+

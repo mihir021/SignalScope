@@ -9,7 +9,8 @@ This module implements the core API service for SignalScope:
 Designed for SIH 2026 AI-Generated Image Detection.
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
+from typing import Optional
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -78,12 +79,13 @@ async def health_check():
 
 
 @app.post("/predict", summary="Predict Real vs Fake Image", tags=["Inference"])
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
     """
     Image inference endpoint:
     - Accepts an uploaded image (JPEG, PNG, WebP, etc.)
     - Validates image integrity using Pillow (PIL)
     - Returns classification result: label ('real' or 'fake') and confidence score.
+    - Optional caption parameter evaluates multimodal caption consistency (Bonus Track E).
     """
     # Verify that an uploaded file exists and has an image content type
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -112,7 +114,7 @@ async def predict(file: UploadFile = File(...)):
         # ----------------------------------------------------------------------
         with Image.open(io.BytesIO(image_bytes)) as img:
             pil_image = img.convert("RGB")
-            prediction = classifier.predict(pil_image)
+            prediction = classifier.predict(pil_image, caption=caption)
 
         result = {
             "filename": file.filename,
@@ -124,6 +126,10 @@ async def predict(file: UploadFile = File(...)):
         }
         if "attribution" in prediction and prediction["attribution"] is not None:
             result["attribution"] = prediction["attribution"]
+        if "exif_metadata" in prediction:
+            result["exif_metadata"] = prediction["exif_metadata"]
+        if "multimodal_match" in prediction:
+            result["multimodal_match"] = prediction["multimodal_match"]
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
@@ -136,7 +142,7 @@ async def predict(file: UploadFile = File(...)):
 
 
 @app.post("/predict/detailed", summary="Predict with Explainability & Spatial Heatmap (Bonus Track A)", tags=["Inference"])
-async def predict_detailed_endpoint(file: UploadFile = File(...)):
+async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
     """
     Detailed image inference endpoint (Bonus Track A - Faithful Explanation):
     - Validates image integrity
@@ -144,6 +150,8 @@ async def predict_detailed_endpoint(file: UploadFile = File(...)):
     - Generates ViT attention saliency heatmap overlay (base64)
     - Synthesizes grounded natural-language forensic cues (spatial, FFT, noise PRNU)
     - Predicts generator family attribution (Bonus Track B)
+    - Extracts camera hardware provenance (Bonus Track D)
+    - Validates multimodal caption consistency if provided (Bonus Track E)
     """
     if not file.content_type or not file.content_type.startswith("image/"):
         logger.warning(f"Rejected non-image upload with content-type: {file.content_type}")
@@ -160,7 +168,7 @@ async def predict_detailed_endpoint(file: UploadFile = File(...)):
 
         with Image.open(io.BytesIO(image_bytes)) as img:
             pil_image = img.convert("RGB")
-            prediction = classifier.predict_detailed(pil_image)
+            prediction = classifier.predict_detailed(pil_image, caption=caption)
 
         result = {
             "filename": file.filename,
@@ -175,6 +183,10 @@ async def predict_detailed_endpoint(file: UploadFile = File(...)):
         }
         if "attribution" in prediction and prediction["attribution"] is not None:
             result["attribution"] = prediction["attribution"]
+        if "exif_metadata" in prediction:
+            result["exif_metadata"] = prediction["exif_metadata"]
+        if "multimodal_match" in prediction:
+            result["multimodal_match"] = prediction["multimodal_match"]
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
