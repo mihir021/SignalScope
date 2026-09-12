@@ -17,6 +17,8 @@ from PIL import Image
 import io
 import logging
 
+from model.predict import classifier
+
 # ------------------------------------------------------------------------------
 # Logging Configuration
 # ------------------------------------------------------------------------------
@@ -106,21 +108,26 @@ async def predict(file: UploadFile = File(...)):
         )
 
         # ----------------------------------------------------------------------
-        # Placeholder Model Inference Result
-        # In later stages, this connects to model/predict.py loading PyTorch/ONNX
+        # Model Inference via Dual-Stream Classifier
         # ----------------------------------------------------------------------
-        dummy_result = {
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            pil_image = img.convert("RGB")
+            prediction = classifier.predict(pil_image)
+
+        result = {
             "filename": file.filename,
-            "label": "fake",
-            "confidence": 0.94,
-            "status": "success"
+            "label": prediction["label"],
+            "verdict": prediction["verdict"],
+            "confidence": prediction["confidence"],
+            "probabilities": prediction["probabilities"],
+            "status": "success",
         }
 
-        return JSONResponse(status_code=status.HTTP_200_OK, content=dummy_result)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
     except Exception as exc:
         logger.error(f"Failed to process image '{file.filename}': {str(exc)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Corrupt or unsupported image file: {str(exc)}"
         )
