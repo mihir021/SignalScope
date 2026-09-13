@@ -39,22 +39,52 @@ jobs:
   # ----------------------------------------------------------------------------
   # Job 2: Deploy to AWS EC2 Instance via SSH
   # Connects to EC2 using repository secrets and updates the running containers
+  # NOTE: This job is SKIPPED if EC2 secrets (EC2_HOST, EC2_SSH_KEY) are not
+  # configured in GitHub Settings > Secrets and variables > Actions.
+  # To enable deployment, add these repository secrets:
+  #   - EC2_HOST:    Public IP or hostname of your EC2 instance
+  #   - EC2_SSH_KEY: Private SSH key (PEM format) for EC2 access
+  #   - EC2_USER:    (Optional) SSH username, defaults to 'ubuntu'
   # ----------------------------------------------------------------------------
   deploy:
     name: Deploy to AWS EC2
     needs: build
     runs-on: ubuntu-latest
+    # Only run on main branch AND only if EC2 deployment secrets are configured
     if: github.ref == 'refs/heads/main'
 
     steps:
-      # Step 1: Execute deployment commands remotely on EC2 via SSH
+      # Step 1: Preflight check — verify required deployment secrets exist
+      # This prevents the SSH step from failing with cryptic connection errors
+      # when secrets haven't been configured yet
+      - name: Verify Deployment Secrets Are Configured
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.EC2_HOST }}" ] || [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "⚠️  EC2 deployment secrets are not configured."
+            echo "   To enable auto-deployment, add EC2_HOST and EC2_SSH_KEY"
+            echo "   in GitHub Settings > Secrets and variables > Actions."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "✅ Deployment secrets verified."
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            # Default SSH username to 'ubuntu' if EC2_USER is not explicitly set in repository secrets
+            EC2_USER="${{ secrets.EC2_USER }}"
+            echo "ec2_user=${EC2_USER:-ubuntu}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Step 2: Execute deployment commands remotely on EC2 via SSH
+      # Only runs if the preflight check confirmed secrets are present
       - name: SSH into AWS EC2 and Redeploy
+        if: steps.check_secrets.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.1
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          username: ${{ steps.check_secrets.outputs.ec2_user }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+          # Timeout after 5 minutes to prevent hung deployments
+          timeout: 300s
           script: |
             # Exit immediately if a command exits with a non-zero status
             set -e
@@ -82,3 +112,19 @@ jobs:
             docker image prune -f
 
             echo "=== SignalScope deployment completed successfully! ==="
+
+      # Step 3: Log skip message when deployment is not configured
+      - name: Skip Deployment (Secrets Not Configured)
+        if: steps.check_secrets.outputs.configured == 'false'
+        run: |
+          echo "============================================================"
+          echo "⏭️  DEPLOYMENT SKIPPED — EC2 secrets not configured."
+          echo ""
+          echo "The Docker build passed successfully ✅"
+          echo "To enable automatic EC2 deployment, add these GitHub secrets:"
+          echo "  • EC2_HOST    → Public IP or hostname of your EC2 instance"
+          echo "  • EC2_SSH_KEY → Private SSH key (PEM format) for SSH access"
+          echo "  • EC2_USER    → (Optional) SSH username, defaults to 'ubuntu'"
+          echo ""
+          echo "Go to: Settings > Secrets and variables > Actions > New secret"
+          echo "============================================================"
