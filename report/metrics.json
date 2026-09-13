@@ -1,0 +1,23 @@
+{
+  "task": "Binary Real-vs-AI Image Classification with Unseen Generalization",
+  "overall_roc_auc": 0.9974,
+  "unseen_split_roc_auc": 0.9982,
+  "overall_macro_f1": 0.9808,
+  "unseen_split_macro_f1": 0.9757,
+  "accuracy_at_operating_point": 0.9808,
+  "false_positive_rate": 0.0283,
+  "test_samples_evaluated": 1200,
+  "operating_threshold": 0.5,
+  "temperature_scaler": 0.8524,
+  "confusion_matrix": {
+    "true_negatives_real": 583,
+    "false_positives": 17,
+    "false_negatives": 6,
+    "true_positives_ai": 594
+  },
+  "unseen_generator_recall": {
+    "midjourney_v5_v6": 1.0,
+    "dalle_2_3": 1.0
+  },
+  "generator_attribution_val_acc": 0.9833
+}

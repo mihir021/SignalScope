@@ -6,16 +6,7 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-E6522C.svg?style=flat&logo=prometheus)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800.svg?style=flat&logo=grafana)](https://grafana.com/)
 
-**SignalScope** is a high-performance deepfake and AI-generated image detection platform built for **Smart India Hackathon (SIH 2026)**. It classifies images as real or synthetic/fake, backed by automated telemetry, physical sensor consensus gating, and continuous deployment.
-
-### 🌟 Key Capabilities
-- **Dual-Stream Forensic Fusion:** Couples semantic vision (CLIP ViT-B/16) with hardware physics (2D-FFT azimuthal profiles & SRM micro-sensor grain).
-- **Physical Sensor Noise Consensus:** Evaluates native CMOS sensor noise autocorrelation to prevent false positives on smartphone portrait mode, bokeh, and skin smoothing.
-- **Explainability Suite (Bonus Track A):** Visual LayerCAM attention heatmaps, 2D Fourier power spectra, and spatial noise residuals.
-- **Generator Family Attribution (Bonus Track B):** Classifies AI fakes into source architectures (Diffusion, GAN, Latent Upsampling).
-- **Camera EXIF Provenance (Bonus Track D):** Extracts hardware make, camera model, lens parameters, and timestamps.
-- **Multimodal Caption Consistency (Bonus Track E):** Zero-shot text-to-image semantic alignment checking via CLIP text embeddings.
-- **Production CI/CD & Automated Testing:** 38 unit and integration tests passing (100%), Prometheus metrics, and Grafana telemetry.
+**SignalScope** is a high-performance deepfake and AI-generated image detection platform built for **Smart India Hackathon (SIH 2026)**. It classifies images as real or synthetic/fake, backed by automated telemetry and continuous deployment.
 
 ---
 

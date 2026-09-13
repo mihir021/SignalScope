@@ -9,13 +9,16 @@ This module implements the core API service for SignalScope:
 Designed for SIH 2026 AI-Generated Image Detection.
 """
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, status
+from typing import Optional
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from PIL import Image
 import io
 import logging
+
+from model.predict import classifier
 
 # ------------------------------------------------------------------------------
 # Logging Configuration
@@ -76,12 +79,13 @@ async def health_check():
 
 
 @app.post("/predict", summary="Predict Real vs Fake Image", tags=["Inference"])
-async def predict(file: UploadFile = File(...)):
+async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
     """
     Image inference endpoint:
     - Accepts an uploaded image (JPEG, PNG, WebP, etc.)
     - Validates image integrity using Pillow (PIL)
     - Returns classification result: label ('real' or 'fake') and confidence score.
+    - Optional caption parameter evaluates multimodal caption consistency (Bonus Track E).
     """
     # Verify that an uploaded file exists and has an image content type
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -106,21 +110,90 @@ async def predict(file: UploadFile = File(...)):
         )
 
         # ----------------------------------------------------------------------
-        # Placeholder Model Inference Result
-        # In later stages, this connects to model/predict.py loading PyTorch/ONNX
+        # Model Inference via Dual-Stream Classifier
         # ----------------------------------------------------------------------
-        dummy_result = {
-            "filename": file.filename,
-            "label": "fake",
-            "confidence": 0.94,
-            "status": "success"
-        }
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            pil_image = img.convert("RGB")
+            prediction = classifier.predict(pil_image, caption=caption)
 
-        return JSONResponse(status_code=status.HTTP_200_OK, content=dummy_result)
+        result = {
+            "filename": file.filename,
+            "label": prediction["label"],
+            "verdict": prediction["verdict"],
+            "confidence": prediction["confidence"],
+            "probabilities": prediction["probabilities"],
+            "status": "success",
+        }
+        if "attribution" in prediction and prediction["attribution"] is not None:
+            result["attribution"] = prediction["attribution"]
+        if "exif_metadata" in prediction:
+            result["exif_metadata"] = prediction["exif_metadata"]
+        if "multimodal_match" in prediction:
+            result["multimodal_match"] = prediction["multimodal_match"]
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
     except Exception as exc:
         logger.error(f"Failed to process image '{file.filename}': {str(exc)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"Corrupt or unsupported image file: {str(exc)}"
         )
+
+
+@app.post("/predict/detailed", summary="Predict with Explainability & Spatial Heatmap (Bonus Track A)", tags=["Inference"])
+async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
+    """
+    Detailed image inference endpoint (Bonus Track A - Faithful Explanation):
+    - Validates image integrity
+    - Runs dual-stream classification
+    - Generates ViT attention saliency heatmap overlay (base64)
+    - Synthesizes grounded natural-language forensic cues (spatial, FFT, noise PRNU)
+    - Predicts generator family attribution (Bonus Track B)
+    - Extracts camera hardware provenance (Bonus Track D)
+    - Validates multimodal caption consistency if provided (Bonus Track E)
+    """
+    if not file.content_type or not file.content_type.startswith("image/"):
+        logger.warning(f"Rejected non-image upload with content-type: {file.content_type}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type. Expected an image, but received: {file.content_type}"
+        )
+
+    try:
+        image_bytes = await file.read()
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            img.verify()
+            detected_format = img.format
+
+        with Image.open(io.BytesIO(image_bytes)) as img:
+            pil_image = img.convert("RGB")
+            prediction = classifier.predict_detailed(pil_image, caption=caption)
+
+        result = {
+            "filename": file.filename,
+            "label": prediction["label"],
+            "verdict": prediction["verdict"],
+            "confidence": prediction["confidence"],
+            "probabilities": prediction["probabilities"],
+            "explanation_cues": prediction["explanation_cues"],
+            "explanation_summary": prediction["explanation_summary"],
+            "overlay_base64": prediction["overlay_base64"],
+            "status": "success",
+        }
+        if "attribution" in prediction and prediction["attribution"] is not None:
+            result["attribution"] = prediction["attribution"]
+        if "exif_metadata" in prediction:
+            result["exif_metadata"] = prediction["exif_metadata"]
+        if "multimodal_match" in prediction:
+            result["multimodal_match"] = prediction["multimodal_match"]
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content=result)
+
+    except Exception as exc:
+        logger.error(f"Failed to process image in detailed mode '{file.filename}': {str(exc)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Corrupt or unsupported image file: {str(exc)}"
+        )
+

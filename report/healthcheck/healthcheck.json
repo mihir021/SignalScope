@@ -1,0 +1,61 @@
+{
+  "standard_metrics_defactify": {
+    "roc_auc": 0.44,
+    "macro_f1": 0.6,
+    "accuracy": 0.6,
+    "trivial_majority_baseline_accuracy": 0.5,
+    "beats_trivial_baseline_by": 0.1,
+    "confusion_matrix": {
+      "true_negatives_real": 3,
+      "false_positives": 2,
+      "false_negatives": 2,
+      "true_positives_ai": 3
+    },
+    "n_samples": 10
+  },
+  "calibration": {
+    "expected_calibration_error": 0.0759,
+    "bins": [
+      {
+        "confidence_range": [
+          0.5,
+          0.55
+        ],
+        "empirical_accuracy": 0.6,
+        "mean_stated_confidence": 0.5241,
+        "n_samples": 10
+      }
+    ]
+  },
+  "stream_ablation": {
+    "full": 0.44,
+    "zero_visual": 0.72,
+    "zero_forensic": 0.44,
+    "forensic_stream_contribution": 0.0,
+    "visual_stream_contribution": -0.28,
+    "warning": "Forensic stream contributes <0.01 AUC when ablated - it may be getting scale-drowned by the unnormalized CLIP stream. Check the LayerNorm-on-visual-stream fix."
+  },
+  "robustness_curve": {
+    "clean": 0.1667,
+    "jpeg_q70": 0.3333,
+    "jpeg_q40": 0.1667,
+    "jpeg_q20": 0.0,
+    "blur_r1": 0.1667,
+    "blur_r2.5": 0.1667,
+    "jpeg_q70_drop_from_clean": -0.1666,
+    "jpeg_q40_drop_from_clean": 0.0,
+    "jpeg_q20_drop_from_clean": 0.1667,
+    "blur_r1_drop_from_clean": 0.0,
+    "blur_r2.5_drop_from_clean": 0.0
+  },
+  "confidence_distribution": {
+    "mean_confidence": 0.5241,
+    "fraction_over_99pct_confident": 0.0,
+    "fraction_near_toss_up": 0.4,
+    "warnings": []
+  },
+  "unseen_generator_metrics": {
+    "skipped": true,
+    "warning": "No unseen-generator data provided. Defactify held-out metrics reflect in-distribution generator performance; provide --unseen_dir (e.g. Synthbuster) to evaluate cross-domain generalization."
+  }
+}
