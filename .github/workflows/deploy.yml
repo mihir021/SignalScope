@@ -83,8 +83,8 @@ jobs:
           username: ${{ steps.check_secrets.outputs.ec2_user }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          # Timeout after 5 minutes to prevent hung deployments
-          timeout: 300s
+          # Timeout after 10 minutes to allow ample time for image build
+          timeout: 600s
           script: |
             # Exit immediately if a command exits with a non-zero status
             set -e
@@ -105,10 +105,16 @@ jobs:
             echo "=== Tearing down existing containers ==="
             docker compose down
 
+            # Pre-clean stale images, dangling volumes, and build cache
+            # This prevents the EC2 root disk from filling up during multi-stage image builds
+            echo "=== Freeing EC2 disk space before rebuild ==="
+            docker system prune -af || true
+            docker builder prune -af || true
+
             echo "=== Rebuilding and starting updated containers ==="
             docker compose up -d --build
 
-            echo "=== Cleaning up unused dangling Docker images ==="
+            echo "=== Cleaning up dangling build artifacts ==="
             docker image prune -f
 
             echo "=== SignalScope deployment completed successfully! ==="

@@ -34,7 +34,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/requirements.txt
 
 # Install pip dependencies with --no-cache-dir to minimize layer size
+# Pre-install CPU-only PyTorch and torchvision to prevent downloading ~6 GB of
+# unused CUDA/NVIDIA libraries on CPU-based instances (e.g., AWS EC2 t3/c6i)
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # ------------------------------------------------------------------------------
