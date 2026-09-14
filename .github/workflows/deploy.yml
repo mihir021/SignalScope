@@ -12,6 +12,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # ----------------------------------------------------------------------------
   # Job 1: Build & Verify Docker Image
@@ -59,8 +62,12 @@ jobs:
       # when secrets haven't been configured yet
       - name: Verify Deployment Secrets Are Configured
         id: check_secrets
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          if [ -z "${{ secrets.EC2_HOST }}" ] || [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+          if [ -z "$EC2_HOST" ] || [ -z "$EC2_SSH_KEY" ]; then
             echo "⚠️  EC2 deployment secrets are not configured."
             echo "   To enable auto-deployment, add EC2_HOST and EC2_SSH_KEY"
             echo "   in GitHub Settings > Secrets and variables > Actions."
@@ -69,7 +76,6 @@ jobs:
             echo "✅ Deployment secrets verified."
             echo "configured=true" >> "$GITHUB_OUTPUT"
             # Default SSH username to 'ubuntu' if EC2_USER is not explicitly set in repository secrets
-            EC2_USER="${{ secrets.EC2_USER }}"
             echo "ec2_user=${EC2_USER:-ubuntu}" >> "$GITHUB_OUTPUT"
           fi
 
@@ -89,19 +95,20 @@ jobs:
             # Exit immediately if a command exits with a non-zero status
             set -e
 
-            # Clone repository if it does not already exist on EC2
+            # Clone repository if it does not already exist on EC2 (authenticated for private repo)
             if [ ! -d "$HOME/SignalScope" ]; then
               echo "=== Initializing repository on EC2 ==="
-              git clone https://github.com/mihir021/SignalScope.git "$HOME/SignalScope"
+              git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mihir021/SignalScope.git "$HOME/SignalScope"
             fi
 
             # Navigate to the SignalScope workspace directory on EC2
             cd "$HOME/SignalScope"
 
             echo "=== Pulling latest changes from main branch ==="
-            git remote set-url origin https://github.com/mihir021/SignalScope.git
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mihir021/SignalScope.git
             git fetch origin main
             git reset --hard origin/main
+            git remote set-url origin https://github.com/mihir021/SignalScope.git
 
             echo "=== Tearing down existing containers ==="
             docker compose down
