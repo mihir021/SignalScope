@@ -54,8 +54,8 @@ COPY tests /app/tests
 # ------------------------------------------------------------------------------
 EXPOSE 8000
 
-# Container healthcheck testing the root / endpoint
-HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
+# Container healthcheck testing the root / endpoint (generous start-period for PyTorch/CLIP loading)
+HEALTHCHECK --interval=20s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
 # ------------------------------------------------------------------------------

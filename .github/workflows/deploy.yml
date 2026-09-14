@@ -92,13 +92,14 @@ jobs:
             # Clone repository if it does not already exist on EC2
             if [ ! -d "$HOME/SignalScope" ]; then
               echo "=== Initializing repository on EC2 ==="
-              git clone git@github.com:mihir021/SignalScope.git "$HOME/SignalScope"
+              git clone https://github.com/mihir021/SignalScope.git "$HOME/SignalScope"
             fi
 
             # Navigate to the SignalScope workspace directory on EC2
             cd "$HOME/SignalScope"
 
             echo "=== Pulling latest changes from main branch ==="
+            git remote set-url origin https://github.com/mihir021/SignalScope.git
             git fetch origin main
             git reset --hard origin/main
 

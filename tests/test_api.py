@@ -135,12 +135,30 @@ def test_classifier_predict_direct():
 
 def test_predict_detailed_endpoint():
     """
-    Verifies that POST /predict/detailed returns explainability cues and heatmap base64.
+    Verifies that POST /predict/detailed returns explainability cues without overlay by default.
     """
     image_bytes = create_test_image_bytes("JPEG", size=(128, 128))
     files = {"file": ("test_explain.jpg", image_bytes, "image/jpeg")}
 
     response = client.post("/predict/detailed", files=files)
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["status"] == "success"
+    assert "explanation_cues" in data
+    assert "explanation_summary" in data
+    assert "overlay_base64" not in data
+    assert "hotspot_region" in data["explanation_cues"]
+
+
+def test_predict_detailed_endpoint_with_overlay():
+    """
+    Verifies that POST /predict/detailed?include_overlay=true returns overlay_base64.
+    """
+    image_bytes = create_test_image_bytes("JPEG", size=(128, 128))
+    files = {"file": ("test_explain.jpg", image_bytes, "image/jpeg")}
+
+    response = client.post("/predict/detailed?include_overlay=true", files=files)
     assert response.status_code == 200
 
     data = response.json()

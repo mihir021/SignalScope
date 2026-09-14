@@ -95,11 +95,9 @@ async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(No
             detail=f"Invalid file type. Expected an image, but received: {file.content_type}"
         )
 
+    # Step 1: Read and validate that the byte stream is a readable image using Pillow
     try:
-        # Read the raw byte content of the uploaded image
         image_bytes = await file.read()
-
-        # Validate that the byte stream is a readable image using Pillow
         with Image.open(io.BytesIO(image_bytes)) as img:
             img.verify()
             detected_format = img.format
@@ -108,10 +106,15 @@ async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(No
             f"Received valid image '{file.filename}' "
             f"(Format: {detected_format}, Size: {len(image_bytes)} bytes)"
         )
+    except Exception as exc:
+        logger.warning(f"Rejected unprocessable image '{file.filename}': {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Corrupt or unsupported image file: {str(exc)}"
+        )
 
-        # ----------------------------------------------------------------------
-        # Model Inference via Dual-Stream Classifier
-        # ----------------------------------------------------------------------
+    # Step 2: Model Inference via Dual-Stream Classifier
+    try:
         with Image.open(io.BytesIO(image_bytes)) as img:
             pil_image = img.convert("RGB")
             prediction = classifier.predict(pil_image, caption=caption)
@@ -133,11 +136,13 @@ async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(No
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
+    except HTTPException:
+        raise
     except Exception as exc:
-        logger.error(f"Failed to process image '{file.filename}': {str(exc)}", exc_info=True)
+        logger.error(f"Inference failure for '{file.filename}': {str(exc)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Corrupt or unsupported image file: {str(exc)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal inference error: {str(exc)}"
         )
 
 
@@ -164,12 +169,26 @@ async def predict_detailed_endpoint(
             detail=f"Invalid file type. Expected an image, but received: {file.content_type}"
         )
 
+    # Step 1: Read and validate image
     try:
         image_bytes = await file.read()
         with Image.open(io.BytesIO(image_bytes)) as img:
             img.verify()
             detected_format = img.format
 
+        logger.info(
+            f"Detailed analysis request for '{file.filename}' "
+            f"(Format: {detected_format}, Size: {len(image_bytes)} bytes)"
+        )
+    except Exception as exc:
+        logger.warning(f"Rejected unprocessable image '{file.filename}': {str(exc)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Corrupt or unsupported image file: {str(exc)}"
+        )
+
+    # Step 2: Detailed Inference with Explainability
+    try:
         with Image.open(io.BytesIO(image_bytes)) as img:
             pil_image = img.convert("RGB")
             prediction = classifier.predict_detailed(pil_image, caption=caption)
@@ -195,10 +214,12 @@ async def predict_detailed_endpoint(
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 
+    except HTTPException:
+        raise
     except Exception as exc:
-        logger.error(f"Failed to process image in detailed mode '{file.filename}': {str(exc)}", exc_info=True)
+        logger.error(f"Detailed inference failure for '{file.filename}': {str(exc)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Corrupt or unsupported image file: {str(exc)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal inference error: {str(exc)}"
         )
 

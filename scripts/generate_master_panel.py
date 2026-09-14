@@ -51,10 +51,10 @@ def generate_panel(image_path: str, output_path: str = None, title: str = None):
     # 1. Full detailed prediction with forensic-gated consensus
     detailed = predict_detailed(image_path)
 
-    # 2. Saliency Heatmap
-    pipeline = ExplainabilityPipeline(classifier)
-    heatmap_arr, _ = pipeline.saliency_explainer.compute_saliency_map(img)
-    overlay_img = pipeline.saliency_explainer.generate_heatmap_overlay(img, heatmap_arr)
+    # 2. Saliency Heatmap Overlay (reused directly from predict_detailed)
+    import base64
+    overlay_bytes = base64.b64decode(detailed["overlay_base64"])
+    overlay_img = Image.open(io.BytesIO(overlay_bytes)).convert("RGB")
 
     # 3. Forensic Diagnostics (FFT + SRM)
     extractor = ForensicExtractor()
@@ -154,12 +154,6 @@ def generate_panel(image_path: str, output_path: str = None, title: str = None):
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"[OK] Master dashboard generated: {output_path}")
-
-    # Copy to brain artifact directory if present
-    artifact_dir = r"C:\Users\DELL\.gemini\antigravity-ide\brain\8f36139a-88cb-45a9-b258-f3315609035e"
-    if os.path.exists(artifact_dir):
-        dest = os.path.join(artifact_dir, os.path.basename(output_path))
-        shutil.copyfile(output_path, dest)
 
     return output_path
 
