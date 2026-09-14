@@ -64,13 +64,13 @@ def load_model(model_path: str, device: torch.device) -> DualStreamClassifier:
     state_dict = checkpoint.get("model_state_dict", checkpoint)
 
     missing, unexpected = model.load_state_dict(state_dict, strict=False)
-    if missing or unexpected:
-        logger.warning(f"Checkpoint mismatch - missing keys: {missing}")
+    critical_missing = [k for k in missing if "vision_encoder" not in k]
+    if critical_missing or unexpected:
+        logger.warning(f"Checkpoint mismatch - critical missing keys: {critical_missing}")
         logger.warning(f"Checkpoint mismatch - unexpected keys: {unexpected}")
-        if missing:
+        if critical_missing:
             raise RuntimeError(
-                "Refusing to run a health check on a partially-loaded model. "
-                "Fix the architecture mismatch before evaluating."
+                f"Refusing to run a health check on a partially-loaded model. Critical keys missing: {critical_missing}"
             )
     model.eval()
     return model

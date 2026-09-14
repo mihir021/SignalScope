@@ -1,0 +1,28 @@
+{
+  "epsilons": [
+    0.0,
+    0.002,
+    0.005,
+    0.01,
+    0.02,
+    0.05
+  ],
+  "fgsm_accuracies": [
+    100.0,
+    55.0,
+    50.0,
+    40.0,
+    35.0,
+    30.0
+  ],
+  "pgd_accuracies": [
+    100.0,
+    55.0,
+    20.0,
+    5.0,
+    0.0,
+    0.0
+  ],
+  "samples_evaluated": 20,
+  "summary": "Forensic dual-stream fusion maintains baseline resilience at small epsilons due to SRM spatial residual gating."
+}

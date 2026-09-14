@@ -201,6 +201,7 @@ class ImageClassifier:
             "visual_norm": visual_norm,
             "forensic_norm": forensic_norm,
             "is_computational_photo": is_computational_photo,
+            "fused_features": fused,
         }
 
     def predict(self, image_input: Union[Image.Image, str], caption: Optional[str] = None) -> Dict[str, Any]:
@@ -247,7 +248,7 @@ class ImageClassifier:
             from model.attribution import GeneratorAttributionPredictor
             if not hasattr(self, "_attribution_predictor") or self._attribution_predictor is None:
                 self._attribution_predictor = GeneratorAttributionPredictor(self)
-            attribution = self._attribution_predictor.predict_family(image)
+            attribution = self._attribution_predictor.predict_family(image, fused_features=eval_res.get("fused_features"))
 
         result_dict = {
             "label": eval_res["predicted_label"],
@@ -329,7 +330,7 @@ class ImageClassifier:
             from model.attribution import GeneratorAttributionPredictor
             if not hasattr(self, "_attribution_predictor") or self._attribution_predictor is None:
                 self._attribution_predictor = GeneratorAttributionPredictor(self)
-            attribution = self._attribution_predictor.predict_family(image)
+            attribution = self._attribution_predictor.predict_family(image, fused_features=eval_res.get("fused_features"))
 
         detailed_res = {
             "label": eval_res["predicted_label"],
@@ -353,9 +354,9 @@ class ImageClassifier:
                 "visual_norm": round(eval_res["visual_norm"], 4),
                 "forensic_norm": round(eval_res["forensic_norm"], 4),
                 "temperature": round(float(self.model.scaler.temperature.item()), 4),
-                "fft_spectrum_2d": diagnostics["fft_spectrum_2d"],
-                "radial_profile": diagnostics["radial_profile"],
-                "noise_residual_2d": diagnostics["noise_residual_2d"],
+                "fft_spectrum_2d": diagnostics["fft_spectrum_2d"].tolist() if hasattr(diagnostics["fft_spectrum_2d"], "tolist") else diagnostics["fft_spectrum_2d"],
+                "radial_profile": diagnostics["radial_profile"].tolist() if hasattr(diagnostics["radial_profile"], "tolist") else diagnostics["radial_profile"],
+                "noise_residual_2d": diagnostics["noise_residual_2d"].tolist() if hasattr(diagnostics["noise_residual_2d"], "tolist") else diagnostics["noise_residual_2d"],
                 "native_sensor_autocorr": round(eval_res["sensor_autocorr"], 4)
             },
             "exif_metadata": exif_meta

@@ -84,9 +84,10 @@ class GeneratorAttributionPredictor:
             logger.info(f"No attribution weights found at {self.weights_path}. Running with prior weights.")
             self.head.eval()
 
-    def predict_family(self, image: Image.Image) -> Dict[str, Any]:
+    def predict_family(self, image: Image.Image, fused_features: Optional[torch.Tensor] = None) -> Dict[str, Any]:
         """
         Predicts generator family for an image.
+        Accepts optional pre-computed fused_features (640-d) to eliminate redundant CLIP + forensic computation.
         Returns:
             {
                 "predicted_family": str,
@@ -94,15 +95,18 @@ class GeneratorAttributionPredictor:
                 "distribution": {family_name: prob, ...}
             }
         """
-        pixel_tensor = self.classifier.transform(image).unsqueeze(0).to(self.device)
-        forensic_feats = self.classifier.forensic_extractor.extract_from_pil(image)
-        forensic_tensor = torch.tensor(forensic_feats, dtype=torch.float32).unsqueeze(0).to(self.device)
-
         with torch.no_grad():
-            vision_outputs = self.classifier.model.vision_encoder(pixel_values=pixel_tensor)
-            visual_embeds = self.classifier.model.visual_norm(vision_outputs.image_embeds)
-            forensic_embeds = self.classifier.model.forensic_proj(forensic_tensor)
-            fused = torch.cat([visual_embeds, forensic_embeds], dim=-1)
+            if fused_features is None:
+                pixel_tensor = self.classifier.transform(image).unsqueeze(0).to(self.device)
+                forensic_feats = self.classifier.forensic_extractor.extract_from_pil(image)
+                forensic_tensor = torch.tensor(forensic_feats, dtype=torch.float32).unsqueeze(0).to(self.device)
+
+                vision_outputs = self.classifier.model.vision_encoder(pixel_values=pixel_tensor)
+                visual_embeds = self.classifier.model.visual_norm(vision_outputs.image_embeds)
+                forensic_embeds = self.classifier.model.forensic_proj(forensic_tensor)
+                fused = torch.cat([visual_embeds, forensic_embeds], dim=-1)
+            else:
+                fused = fused_features.to(self.device)
 
             logits = self.head(fused)
             probs = torch.softmax(logits, dim=-1)[0].cpu().numpy()

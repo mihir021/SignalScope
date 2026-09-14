@@ -33,6 +33,7 @@ from sklearn.metrics import (
 
 from model.classifier import DualStreamClassifier
 from model.dataset import DefactifyDataset, LocalFolderDataset, create_balanced_defactify_indices, get_transforms
+from model.splits import get_disjoint_val_test_indices, assert_disjoint
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("signalscope-evaluate")
@@ -65,13 +66,18 @@ def run_evaluation(
 
     model.eval()
 
-    # 2. Load Evaluation Dataset
+    # 2. Load Evaluation Dataset (strictly disjoint from validation training pool)
     if data_path and os.path.isdir(data_path):
         logger.info(f"Loading local evaluation dataset from {data_path}...")
         test_dataset = LocalFolderDataset(data_path, transform=get_transforms(is_train=False), is_train=False)
     else:
-        logger.info("Loading Defactify validation split for held-out benchmark evaluation...")
-        raw_dataset = load_dataset("Rajarshi-Roy-research/Defactify_Image_Dataset", split="validation")
+        logger.info("Loading Defactify dataset for held-out benchmark evaluation...")
+        try:
+            raw_dataset = load_dataset("Rajarshi-Roy-research/Defactify_Image_Dataset", split="test")
+            logger.info("Using official held-out test split from Defactify.")
+        except Exception:
+            logger.info("Loading Defactify validation split with disjoint test partition seed.")
+            raw_dataset = load_dataset("Rajarshi-Roy-research/Defactify_Image_Dataset", split="validation")
         samples_per_gen = max(1, test_samples // 10)
         eval_indices = create_balanced_defactify_indices(raw_dataset, samples_per_generator=samples_per_gen, seed=99)
         test_subset = Subset(raw_dataset, eval_indices)

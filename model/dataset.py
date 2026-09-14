@@ -109,7 +109,8 @@ class LocalFolderDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Dict[str, Any]:
         path, label = self.samples[idx]
-        image = Image.open(path).convert("RGB")
+        with Image.open(path) as img:
+            image = img.convert("RGB")
 
         if self.is_train:
             if self.jpeg_aug is not None:

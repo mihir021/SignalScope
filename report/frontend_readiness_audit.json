@@ -1,0 +1,250 @@
+{
+  "summary": [
+    {
+      "file": "user_astronaut_cat.png",
+      "size_kb": 324.3,
+      "status_code": 200,
+      "label": "fake",
+      "confidence": 0.9703,
+      "latency_standard_ms": 67.6,
+      "latency_detailed_ms": 512.7,
+      "latency_overlay_ms": 204.6,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely AI-generated (97.0% confidence). Thermal heatmap reveals localized anomalous texture patterns concentrated in the central-middle region (peak saliency: 1.00). 2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.50 ratio), indicative of deconvolution / latent upsampling grid artifacts. High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.2142), confirming generative deconvolution / latent upsampling artifacts.",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 42468,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "attribution",
+        "exif_metadata"
+      ]
+    },
+    {
+      "file": "test_cat_cobblestone.jpg",
+      "size_kb": 144.4,
+      "status_code": 200,
+      "label": "fake",
+      "confidence": 0.9079,
+      "latency_standard_ms": 147.6,
+      "latency_detailed_ms": 730.3,
+      "latency_overlay_ms": 759.1,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely AI-generated (90.8% confidence). Widespread structural diffusion artifacts detected across the entire composition (saliency concentration: 1.00). 2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.55 ratio), indicative of deconvolution / latent upsampling grid artifacts. High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.1674), confirming generative deconvolution / latent upsampling artifacts.",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 197448,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "attribution",
+        "exif_metadata"
+      ]
+    },
+    {
+      "file": "test_child_sunglasses.jpg",
+      "size_kb": 90.8,
+      "status_code": 200,
+      "label": "real",
+      "confidence": 0.934,
+      "latency_standard_ms": 126.5,
+      "latency_detailed_ms": 655.5,
+      "latency_overlay_ms": 652.1,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely authentic / real (93.4% confidence). Visual attention map shows natural, continuous semantic coherence without localized synthetic boundary disruptions. Frequency domain exhibits organic 1/f power-law decay characteristic of natural light captured through optical camera lenses. Noise residual analysis confirms physical CMOS sensor PRNU grain with uncorrelated spatial noise (lag-1 AC: -0.0684), characteristic of physical optical capture. [Grounded Note: Mobile computational photography detected: Brain 1 noted portrait-mode smoothing/bokeh, but Brain 2 verified genuine physical CMOS sensor noise (-0.0684 autocorrelation). Correctly classified as authentic.]",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 131584,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "exif_metadata"
+      ]
+    },
+    {
+      "file": "user_lens_sample.png",
+      "size_kb": 199.9,
+      "status_code": 200,
+      "label": "real",
+      "confidence": 0.8856,
+      "latency_standard_ms": 56.4,
+      "latency_detailed_ms": 156.1,
+      "latency_overlay_ms": 149.4,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely authentic / real (88.6% confidence). Visual attention map shows natural, continuous semantic coherence without localized synthetic boundary disruptions. Frequency domain exhibits organic 1/f power-law decay characteristic of natural light captured through optical camera lenses. Noise residual analysis confirms physical CMOS sensor PRNU grain with uncorrelated spatial noise (lag-1 AC: +0.0618), characteristic of physical optical capture.",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 27564,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "exif_metadata"
+      ]
+    },
+    {
+      "file": "user_person_portrait.jpg",
+      "size_kb": 68.4,
+      "status_code": 200,
+      "label": "real",
+      "confidence": 0.8983,
+      "latency_standard_ms": 108.2,
+      "latency_detailed_ms": 524.7,
+      "latency_overlay_ms": 521.2,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely authentic / real (89.8% confidence). Visual attention map shows natural, continuous semantic coherence without localized synthetic boundary disruptions. Frequency domain exhibits organic 1/f power-law decay characteristic of natural light captured through optical camera lenses. Noise residual analysis confirms physical CMOS sensor PRNU grain with uncorrelated spatial noise (lag-1 AC: -0.0171), characteristic of physical optical capture. [Grounded Note: Mobile computational photography detected: Brain 1 noted portrait-mode smoothing/bokeh, but Brain 2 verified genuine physical CMOS sensor noise (-0.0171 autocorrelation). Correctly classified as authentic.]",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 99636,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "exif_metadata"
+      ]
+    },
+    {
+      "file": "user_rainy_portrait.jpg",
+      "size_kb": 318.9,
+      "status_code": 200,
+      "label": "fake",
+      "confidence": 0.9847,
+      "latency_standard_ms": 159.6,
+      "latency_detailed_ms": 877.0,
+      "latency_overlay_ms": 898.9,
+      "attribution_family": null,
+      "explanation_summary": "Prediction: likely AI-generated (98.5% confidence). Widespread structural diffusion artifacts detected across the entire composition (saliency concentration: 1.00). 2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.54 ratio), indicative of deconvolution / latent upsampling grid artifacts. High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.3386), confirming generative deconvolution / latent upsampling artifacts.",
+      "hotspot_region": "central-middle region",
+      "overlay_base64_chars": 150012,
+      "clip_similarity": null,
+      "sample_detailed_keys": [
+        "filename",
+        "label",
+        "verdict",
+        "confidence",
+        "probabilities",
+        "explanation_cues",
+        "explanation_summary",
+        "status",
+        "attribution",
+        "exif_metadata"
+      ]
+    }
+  ],
+  "sample_standard_response": {
+    "filename": "user_rainy_portrait.jpg",
+    "label": "fake",
+    "verdict": "likely AI-generated",
+    "confidence": 0.9847,
+    "probabilities": {
+      "real": 0.0153,
+      "fake": 0.9847
+    },
+    "status": "success",
+    "attribution": {
+      "predicted_family": "DALL-E family (DALL-E 2 / 3)",
+      "confidence": 0.9519,
+      "distribution": {
+        "Stable Diffusion family (SD 1.x / 2.x / SDXL)": 0.0058,
+        "Midjourney family (v5 / v6)": 0.041,
+        "DALL-E family (DALL-E 2 / 3)": 0.9519,
+        "GAN / Legacy Generative Models": 0.0013
+      },
+      "family_probabilities": {
+        "Stable Diffusion family (SD 1.x / 2.x / SDXL)": 0.0058,
+        "Midjourney family (v5 / v6)": 0.041,
+        "DALL-E family (DALL-E 2 / 3)": 0.9519,
+        "GAN / Legacy Generative Models": 0.0013
+      }
+    },
+    "exif_metadata": {
+      "has_exif": false,
+      "device": "unknown / stripped"
+    }
+  },
+  "sample_detailed_response": {
+    "filename": "user_rainy_portrait.jpg",
+    "label": "fake",
+    "verdict": "likely AI-generated",
+    "confidence": 0.9847,
+    "probabilities": {
+      "real": 0.0153,
+      "fake": 0.9847
+    },
+    "explanation_cues": {
+      "spatial_cue": "Widespread structural diffusion artifacts detected across the entire composition (saliency concentration: 1.00).",
+      "frequency_cue": "2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.54 ratio), indicative of deconvolution / latent upsampling grid artifacts.",
+      "noise_cue": "High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.3386), confirming generative deconvolution / latent upsampling artifacts.",
+      "summary": "Prediction: likely AI-generated (98.5% confidence). Widespread structural diffusion artifacts detected across the entire composition (saliency concentration: 1.00). 2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.54 ratio), indicative of deconvolution / latent upsampling grid artifacts. High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.3386), confirming generative deconvolution / latent upsampling artifacts.",
+      "hotspot_region": "central-middle region",
+      "peak_saliency": 1.0,
+      "spectral_ratio": 0.5397,
+      "noise_variance": 0.000327,
+      "is_faithful": true
+    },
+    "explanation_summary": "Prediction: likely AI-generated (98.5% confidence). Widespread structural diffusion artifacts detected across the entire composition (saliency concentration: 1.00). 2D-FFT azimuthal power spectrum reveals periodic high-frequency energy spikes (0.54 ratio), indicative of deconvolution / latent upsampling grid artifacts. High-pass noise residual exhibits unnatural spatial correlation (lag-1 AC: +0.3386), confirming generative deconvolution / latent upsampling artifacts.",
+    "status": "success",
+    "attribution": {
+      "predicted_family": "DALL-E family (DALL-E 2 / 3)",
+      "confidence": 0.9519,
+      "distribution": {
+        "Stable Diffusion family (SD 1.x / 2.x / SDXL)": 0.0058,
+        "Midjourney family (v5 / v6)": 0.041,
+        "DALL-E family (DALL-E 2 / 3)": 0.9519,
+        "GAN / Legacy Generative Models": 0.0013
+      },
+      "family_probabilities": {
+        "Stable Diffusion family (SD 1.x / 2.x / SDXL)": 0.0058,
+        "Midjourney family (v5 / v6)": 0.041,
+        "DALL-E family (DALL-E 2 / 3)": 0.9519,
+        "GAN / Legacy Generative Models": 0.0013
+      }
+    },
+    "exif_metadata": {
+      "has_exif": false,
+      "device": "unknown / stripped"
+    }
+  },
+  "sample_overlay_response_keys": [
+    "filename",
+    "label",
+    "verdict",
+    "confidence",
+    "probabilities",
+    "explanation_cues",
+    "explanation_summary",
+    "status",
+    "overlay_base64",
+    "attribution",
+    "exif_metadata"
+  ]
+}
