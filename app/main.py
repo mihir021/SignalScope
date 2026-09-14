@@ -10,7 +10,7 @@ Designed for SIH 2026 AI-Generated Image Detection.
 """
 
 from typing import Optional
-from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -142,7 +142,11 @@ async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(No
 
 
 @app.post("/predict/detailed", summary="Predict with Explainability & Spatial Heatmap (Bonus Track A)", tags=["Inference"])
-async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
+async def predict_detailed_endpoint(
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(None),
+    include_overlay: bool = Query(False),
+):
     """
     Detailed image inference endpoint (Bonus Track A - Faithful Explanation):
     - Validates image integrity
@@ -178,9 +182,10 @@ async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optio
             "probabilities": prediction["probabilities"],
             "explanation_cues": prediction["explanation_cues"],
             "explanation_summary": prediction["explanation_summary"],
-            "overlay_base64": prediction["overlay_base64"],
             "status": "success",
         }
+        if include_overlay:
+            result["overlay_base64"] = prediction["overlay_base64"]
         if "attribution" in prediction and prediction["attribution"] is not None:
             result["attribution"] = prediction["attribution"]
         if "exif_metadata" in prediction:
