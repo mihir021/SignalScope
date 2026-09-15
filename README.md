@@ -17,6 +17,13 @@ Watch the full live demonstration of SignalScope explaining the forensic pipelin
 
 ---
 
+## 🌍 Live Deployment (AWS EC2)
+
+The SignalScope forensic dashboard is currently live and accessible from anywhere in the world! Evaluators can directly access the full-stack application here:
+🔗 **[Live Demo URL: http://18.212.83.78:8000](http://18.212.83.78:8000)**
+
+---
+
 ## 🌟 Key Capabilities & PS-2 Compliance
 
 1. **Dual-Brain Consensus Architecture**:
