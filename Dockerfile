@@ -1,21 +1,9 @@
 # ==============================================================================
-# Dockerfile for SignalScope Full-Stack Deployment
-# Multi-stage build: Builds Vite frontend, then copies it to FastAPI container
+# Dockerfile for SignalScope API
+# Single-stage deployment: pre-built frontend is copied directly to save EC2 memory
+# Base Image: Official Python 3.11 Debian-slim
 # ==============================================================================
 
-# ------------------------------------------------------------------------------
-# Stage 1: Build the React Frontend
-# ------------------------------------------------------------------------------
-FROM node:20 AS frontend-builder
-WORKDIR /build
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
-
-# ------------------------------------------------------------------------------
-# Stage 2: SignalScope API (Python)
-# ------------------------------------------------------------------------------
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -38,8 +26,8 @@ COPY app /app/app
 COPY model /app/model
 COPY tests /app/tests
 
-# Copy the built React UI from Stage 1 so FastAPI can serve it
-COPY --from=frontend-builder /build/dist /app/frontend/dist
+# Copy the pre-built React UI from the host repository (avoids heavy Node.js build on EC2)
+COPY frontend/dist /app/frontend/dist
 
 EXPOSE 8000
 
