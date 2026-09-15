@@ -143,12 +143,16 @@ async def predict(file: UploadFile = File(...), caption: Optional[str] = Form(No
 
 
 @app.post("/predict/detailed", summary="Predict with Explainability & Spatial Heatmap (Bonus Track A)", tags=["Inference"])
-async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optional[str] = Form(None)):
+async def predict_detailed_endpoint(
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(None),
+    include_overlay: bool = False
+):
     """
     Detailed image inference endpoint (Bonus Track A - Faithful Explanation):
     - Validates image integrity
     - Runs dual-stream classification
-    - Generates ViT attention saliency heatmap overlay (base64)
+    - Generates ViT attention saliency heatmap overlay (base64) when include_overlay=True
     - Synthesizes grounded natural-language forensic cues (spatial, FFT, noise PRNU)
     - Predicts generator family attribution (Bonus Track B)
     - Extracts camera hardware provenance (Bonus Track D)
@@ -177,17 +181,24 @@ async def predict_detailed_endpoint(file: UploadFile = File(...), caption: Optio
             "verdict": prediction["verdict"],
             "confidence": prediction["confidence"],
             "probabilities": prediction["probabilities"],
+            "certainty_tier": prediction.get("certainty_tier", "high"),
+            "sensor_autocorr": prediction.get("sensor_autocorr"),
+            "stream_scores": prediction.get("stream_scores"),
             "explanation_cues": prediction["explanation_cues"],
             "explanation_summary": prediction["explanation_summary"],
-            "overlay_base64": prediction["overlay_base64"],
             "status": "success",
         }
+        if include_overlay and "overlay_base64" in prediction:
+            result["overlay_base64"] = prediction["overlay_base64"]
         if "attribution" in prediction and prediction["attribution"] is not None:
             result["attribution"] = prediction["attribution"]
         if "exif_metadata" in prediction:
             result["exif_metadata"] = prediction["exif_metadata"]
         if "multimodal_match" in prediction:
             result["multimodal_match"] = prediction["multimodal_match"]
+        if "diagnostics" in prediction:
+            # Pass 1D radial profile and native autocorrelation for chart rendering
+            result["radial_profile"] = prediction["diagnostics"].get("radial_profile")
 
         return JSONResponse(status_code=status.HTTP_200_OK, content=result)
 

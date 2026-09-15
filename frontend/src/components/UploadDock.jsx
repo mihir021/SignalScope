@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Image as ImageIcon, X, ArrowRight, FileCheck, Sparkles, RefreshCw } from 'lucide-react';
+import { UploadCloud, Image as ImageIcon, X, ArrowRight, FileCheck, Sparkles, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset }) {
   const [dragOver, setDragOver] = useState(false);
@@ -27,6 +27,20 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
       return;
     }
     onAnalyze(file, caption);
+  };
+
+  const handleSampleLoad = async (samplePath, filename, defaultCaption = '') => {
+    try {
+      const res = await fetch(samplePath);
+      const blob = await res.blob();
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (defaultCaption) {
+        setCaption(defaultCaption);
+      }
+      onAnalyze(file, defaultCaption);
+    } catch (err) {
+      console.error('Failed to load sample image:', err);
+    }
   };
 
   const handleDrop = (e) => {
@@ -91,7 +105,7 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
                   Ingest Image for Forensic Verification
                 </h4>
                 <p className="text-xs text-charcoal-500 mt-0.5">
-                  Drag & drop your file here, or click to browse (PNG, JPG, JPEG, WEBP)
+                  Drag & drop, browse, or click a judge test preset below
                 </p>
               </div>
             )}
@@ -99,14 +113,38 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
         </div>
 
         {/* Right Action Buttons */}
-        <div className="flex flex-wrap items-center justify-end gap-2.5 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center justify-end gap-2 w-full lg:w-auto">
+          {/* Judge Preset 1: Real */}
+          <button
+            type="button"
+            onClick={() => handleSampleLoad('/sample_authentic.png', 'sample_authentic.png')}
+            disabled={isLoading}
+            className="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold border border-emerald-200 transition-all flex items-center space-x-1"
+            title="1-Click test with authentic camera capture"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Preset: Authentic</span>
+          </button>
+
+          {/* Judge Preset 2: Synthetic */}
+          <button
+            type="button"
+            onClick={() => handleSampleLoad('/sample_synthetic.png', 'sample_synthetic.png', 'A wildlife portrait in nature')}
+            disabled={isLoading}
+            className="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold border border-amber-200 transition-all flex items-center space-x-1"
+            title="1-Click test with synthetic diffusion image"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+            <span>Preset: AI-Gen</span>
+          </button>
+
           {/* Caption prompt button */}
           <button
             type="button"
             onClick={() => setShowCaption(!showCaption)}
-            className="px-3 py-2 rounded-full bg-warm-100 hover:bg-warm-200 text-charcoal-700 text-xs font-medium border border-warm-border transition-all"
+            className="px-3 py-1.5 rounded-full bg-warm-100 hover:bg-warm-200 text-charcoal-700 text-xs font-medium border border-warm-border transition-all"
           >
-            {showCaption ? 'Hide Caption' : '+ Multimodal Caption'}
+            {showCaption ? 'Hide Caption' : '+ Caption (Bonus E)'}
           </button>
 
           {/* Browse / Select File */}
@@ -114,9 +152,9 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isLoading}
-            className="px-4 py-2 rounded-full bg-white hover:bg-warm-50 text-charcoal-800 text-xs font-semibold border border-warm-border shadow-soft transition-all"
+            className="px-4 py-1.5 rounded-full bg-white hover:bg-warm-50 text-charcoal-800 text-xs font-semibold border border-warm-border shadow-soft transition-all"
           >
-            Browse Image
+            Browse
           </button>
 
           {/* Reset / Clear Button */}
@@ -125,7 +163,7 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
               type="button"
               onClick={onReset}
               disabled={isLoading}
-              className="px-3.5 py-2 rounded-full bg-white hover:bg-rose-50 text-charcoal-600 hover:text-rose-700 text-xs font-medium border border-warm-border transition-all flex items-center space-x-1"
+              className="px-3 py-1.5 rounded-full bg-white hover:bg-rose-50 text-charcoal-600 hover:text-rose-700 text-xs font-medium border border-warm-border transition-all flex items-center space-x-1"
               title="Reset analysis"
             >
               <X className="w-3.5 h-3.5" />
@@ -149,9 +187,9 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
             {isLoading ? (
               <RefreshCw className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-3.5 h-3.5 text-charcoal-900" />
             )}
-            <span>{isLoading ? 'Analyzing...' : (currentFile ? 'Re-Analyze Image' : 'Select & Analyze')}</span>
+            <span>{isLoading ? 'Analyzing...' : (currentFile ? 'Re-Analyze' : 'Analyze')}</span>
           </button>
         </div>
 
@@ -160,14 +198,14 @@ export default function UploadDock({ onAnalyze, isLoading, currentFile, onReset 
       {/* Optional Caption Input Row */}
       {showCaption && (
         <div className="mt-3 pt-3 border-t border-warm-border/60 flex items-center space-x-3">
-          <span className="text-xs text-charcoal-500 font-medium whitespace-nowrap">
-            Multimodal Prompt:
+          <span className="text-xs text-charcoal-600 font-medium whitespace-nowrap">
+            Multimodal Prompt (Bonus Track E):
           </span>
           <input
             type="text"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            placeholder="e.g. A photo of a lion in the savanna"
+            placeholder="e.g. A wildlife portrait in nature"
             className="flex-1 text-xs px-3.5 py-1.5 rounded-xl bg-warm-50 border border-warm-border text-charcoal-900 placeholder:text-charcoal-400 focus:outline-none focus:ring-1 focus:ring-gold-500"
           />
         </div>

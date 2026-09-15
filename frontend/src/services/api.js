@@ -33,7 +33,7 @@ export async function checkHealth() {
 /**
  * Upload and analyze an image using the detailed forensic pipeline
  * @param {File} file - Image file (PNG, JPG, JPEG, WEBP)
- * @param {string} [caption] - Optional text prompt/caption for multimodal match (Bonus E)
+ * @param {string} [caption] - Optional text prompt/caption for multimodal cross-matching
  * @returns {Promise<Object>} Detailed prediction response payload
  */
 export async function analyzeImage(file, caption = null) {

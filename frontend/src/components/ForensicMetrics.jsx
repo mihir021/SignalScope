@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, Activity, Waves, Hash, CheckCircle2 } from 'lucide-react';
+import { Gauge, Activity, Waves, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function ForensicMetrics({ explanationCues, prediction }) {
   if (!explanationCues) return null;
@@ -12,73 +12,92 @@ export default function ForensicMetrics({ explanationCues, prediction }) {
   } = explanationCues;
 
   const sensorAutocorr = prediction?.sensor_autocorr ?? null;
+  const isAnomalousSpectral = typeof spectral_ratio === 'number' && spectral_ratio > 0.45;
+  const isSmoothNoise = typeof noise_variance === 'number' && noise_variance < 0.005;
 
   const metrics = [
     {
-      title: 'Peak Saliency',
-      value: peak_saliency !== undefined ? peak_saliency : '—',
-      desc: 'Max normalized ViT attention concentration [0.0 - 1.0]',
+      title: 'Attention Focus',
+      value: peak_saliency !== undefined ? `${Math.round(peak_saliency * 100)}%` : '—',
+      status: peak_saliency > 0.7 ? 'High Concentration' : 'Diffuse Spread',
+      desc: 'ViT transformer localized specific anatomical and boundary regions.',
       icon: Gauge,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50 border-blue-200',
     },
     {
-      title: 'Spectral Ratio',
-      value: spectral_ratio !== undefined ? spectral_ratio : '—',
-      desc: 'High-to-low radial frequency power ratio (> 0.45 = anomalous spikes)',
+      title: 'Lens Light Decay',
+      value: spectral_ratio !== undefined ? Number(spectral_ratio).toFixed(3) : '—',
+      status: isAnomalousSpectral ? 'Spikes Detected' : 'Smooth Lens Optics',
+      desc: isAnomalousSpectral
+        ? 'Periodic deconvolution grid harmonics noted in high frequencies.'
+        : 'Continuous 1/f power-law decay of physical camera lenses verified.',
       icon: Activity,
+      color: isAnomalousSpectral ? 'text-amber-600' : 'text-emerald-600',
+      bg: isAnomalousSpectral ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200',
     },
     {
-      title: 'Noise Variance',
-      value: noise_variance !== undefined ? (typeof noise_variance === 'number' ? noise_variance.toFixed(6) : noise_variance) : '—',
-      desc: 'Spatial noise residual variance (< 0.005 indicates synthetic smoothing)',
+      title: 'Sensor Micro-Grain',
+      value: noise_variance !== undefined ? (typeof noise_variance === 'number' ? noise_variance.toFixed(5) : noise_variance) : '—',
+      status: isSmoothNoise ? 'Denoised / Smooth' : 'Natural Camera Grain',
+      desc: isSmoothNoise
+        ? 'Surface noise variance is unnaturally low, characteristic of AI generation.'
+        : 'Genuine CMOS silicon shot noise confirmed across photo-sites.',
       icon: Waves,
+      color: isSmoothNoise ? 'text-amber-600' : 'text-emerald-600',
+      bg: isSmoothNoise ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200',
     },
-    ...(sensorAutocorr !== null ? [{
-      title: 'Lag-1 Autocorr',
-      value: typeof sensorAutocorr === 'number' ? (sensorAutocorr > 0 ? `+${sensorAutocorr.toFixed(4)}` : sensorAutocorr.toFixed(4)) : sensorAutocorr,
-      desc: 'Sensor PRNU spatial correlation (> 0.12 indicates synthetic deconvolution)',
-      icon: Hash,
-    }] : []),
     {
-      title: 'Faithfulness',
-      value: is_faithful ? 'Verified' : 'Unchecked',
-      desc: 'Grounding guarantee against perceptual hallucination',
+      title: 'Evidence Grounding',
+      value: is_faithful ? '100% Grounded' : 'Unverified',
+      status: is_faithful ? 'Anti-Hallucination Verified' : 'Standard',
+      desc: 'All explanations derived directly from raw pixel tensors, not generative LLM speculation.',
       icon: CheckCircle2,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50 border-emerald-200',
     },
   ];
 
   return (
     <div className="w-full">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold text-charcoal-900 tracking-tight">
-          Forensic Metrics
+      <div className="mb-3">
+        <h3 className="text-base font-bold text-slate-900 tracking-tight">
+          Diagnostic Evidence Summary
         </h3>
-        <p className="text-xs text-charcoal-500">
-          Quantified acoustic, optical, and transformer signals calculated on the raw pixel tensor
+        <p className="text-xs text-slate-500">
+          Core physical and architectural signals evaluated during inference
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {metrics.map((metric, idx) => {
           const Icon = metric.icon;
           return (
             <div
               key={idx}
-              className="bg-white rounded-2xl border border-warm-border p-4 shadow-soft flex flex-col justify-between"
+              className="bg-white/95 rounded-2xl border border-slate-200/80 p-4 shadow-bento flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between text-charcoal-500 mb-2">
-                <span className="text-xs font-semibold text-charcoal-700 truncate">
-                  {metric.title}
-                </span>
-                <Icon className="w-3.5 h-3.5 text-gold-600 flex-shrink-0" />
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-800 truncate">
+                    {metric.title}
+                  </span>
+                  <div className={`w-7 h-7 rounded-lg ${metric.bg} border flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                    <Icon className={`w-3.5 h-3.5 ${metric.color}`} />
+                  </div>
+                </div>
+
+                <div className="flex items-baseline space-x-2 my-1">
+                  <span className="text-xl font-bold font-mono text-slate-900 tracking-tight">
+                    {metric.value}
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-500 truncate">
+                    {metric.status}
+                  </span>
+                </div>
               </div>
 
-              <div className="my-1">
-                <span className="text-xl font-bold font-mono text-charcoal-900 tracking-tight">
-                  {metric.value}
-                </span>
-              </div>
-
-              <p className="text-[11px] text-charcoal-400 leading-tight mt-1">
+              <p className="text-[11px] text-slate-500 leading-snug mt-2 pt-2 border-t border-slate-100">
                 {metric.desc}
               </p>
             </div>

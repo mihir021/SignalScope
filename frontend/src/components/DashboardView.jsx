@@ -5,13 +5,17 @@ import FunnelCard from './FunnelCard';
 import OverviewCard from './OverviewCard';
 import ModelAttention from './ModelAttention';
 import IntelligentAlertsCard from './IntelligentAlertsCard';
+import DualStreamDiagram from './DualStreamDiagram';
+import SpectralChart from './SpectralChart';
+import SensorNoiseVisualizer from './SensorNoiseVisualizer';
 import WhyThisResult from './WhyThisResult';
 import ForensicMetrics from './ForensicMetrics';
 import GeneratorAttribution from './GeneratorAttribution';
+import RobustnessCard from './RobustnessCard';
 import MetadataCard from './MetadataCard';
 import ExplanationSummary from './ExplanationSummary';
 import LoadingState from './LoadingState';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, Sparkles } from 'lucide-react';
 
 export default function DashboardView({
   result,
@@ -31,10 +35,12 @@ export default function DashboardView({
     }
   };
 
+  const cues = result?.explanation_cues || {};
+
   return (
     <div className="w-full px-4 sm:px-8 xl:px-12 py-3 flex gap-5 sm:gap-6">
       
-      {/* Left Icon Rail (matching reference image) */}
+      {/* Left Icon Rail */}
       <SidebarRail
         activeTab={activeSidebarTab}
         onSelectTab={scrollToSection}
@@ -43,26 +49,26 @@ export default function DashboardView({
       {/* Main Dashboard Canvas (Full Width Grid) */}
       <div className="flex-1 min-w-0 space-y-6">
         
-        {/* Dashboard Title & Top Bar (Exact replica of "Dashboard Overview" row in reference image) */}
+        {/* Dashboard Title & Top Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-charcoal-900 font-sans">
-              Dashboard Overview
+              Forensic Lab Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-charcoal-500 mt-0.5">
-              Overview of multi-stream AI forensics, visual attention rollout, and CMOS sensor health
+              SIH-2026 dual-stream AI forensics, visual attention rollout, and CMOS sensor health
             </p>
           </div>
 
-          {/* Date & Filter Pills (matching reference image top right) */}
+          {/* Date & Mode Pills */}
           <div className="flex items-center space-x-2.5 self-start sm:self-auto">
             <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white border border-warm-border text-xs font-medium text-charcoal-700 shadow-soft">
               <Calendar className="w-3.5 h-3.5 text-gold-600" />
-              <span>Today, 15 Sep 2026</span>
+              <span>SIH-2026 Evaluation Suite</span>
             </div>
-            <div className="hidden sm:flex items-center space-x-1 px-3 py-1.5 rounded-full bg-white border border-warm-border text-xs font-medium text-charcoal-600 shadow-soft">
-              <span>Mode: Dual-Stream</span>
-              <ChevronDown className="w-3 h-3 text-charcoal-400" />
+            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white border border-warm-border text-xs font-medium text-charcoal-700 shadow-soft">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Mode: Dual-Stream Fused</span>
             </div>
           </div>
         </div>
@@ -88,9 +94,8 @@ export default function DashboardView({
           </div>
         )}
 
-        {/* TOP ROW: Funnel Card (65% width) + Overview Radial Gauge (35% width) */}
+        {/* TOP ROW: Funnel Card (8 cols) + Radial Confidence Gauge (4 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Conversion / Forensic Funnel (8 cols) */}
           <div className="lg:col-span-8 flex flex-col">
             <FunnelCard
               result={result}
@@ -98,7 +103,6 @@ export default function DashboardView({
             />
           </div>
 
-          {/* Radial Confidence Gauge Card (4 cols) */}
           <div className="lg:col-span-4 flex flex-col">
             <OverviewCard
               result={result}
@@ -107,9 +111,23 @@ export default function DashboardView({
           </div>
         </div>
 
+        {/* SPOTLIGHT: Whole-Image Content & Scene Explanation (From /image/summary) */}
+        <div id="explanation" className="w-full">
+          <ExplanationSummary
+            summary={result?.image_summary || result?.explanation_summary}
+            imageSummaryData={result?.image_summary_data}
+            forensicSummary={result?.explanation_summary}
+            rawResponse={result}
+          />
+        </div>
+
+        {/* INTERACTIVE ARCHITECTURE DIAGRAM */}
+        <div id="diagram" className="w-full">
+          <DualStreamDiagram />
+        </div>
+
         {/* MIDDLE ROW: Visual Attention & Saliency (8 cols) + Intelligent Alerts (4 cols) */}
         <div id="attention" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* Model Attention Heatmap Card (8 cols) */}
           <div className="lg:col-span-8 flex flex-col">
             <ModelAttention
               originalImageFile={currentFile}
@@ -119,12 +137,25 @@ export default function DashboardView({
             />
           </div>
 
-          {/* Intelligent Alerts Card (4 cols) */}
           <div id="alerts" className="lg:col-span-4 flex flex-col">
             <IntelligentAlertsCard
               result={result}
             />
           </div>
+        </div>
+
+        {/* DUAL-PHYSICS FORENSIC CHARTS ROW: 2D-FFT Spectrum (6 cols) + CMOS Sensor Noise (6 cols) */}
+        <div id="streams" className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          <SpectralChart
+            spectralRatio={cues.spectral_ratio}
+            hasResult={Boolean(result)}
+          />
+          <SensorNoiseVisualizer
+            noiseVariance={cues.noise_variance}
+            sensorAutocorr={result?.sensor_autocorr}
+            isReal={result?.label?.toLowerCase() === 'real'}
+            hasResult={Boolean(result)}
+          />
         </div>
 
         {/* EVIDENCE ROW: Why this result? 3 Cards Across Full Width */}
@@ -140,26 +171,23 @@ export default function DashboardView({
           />
         </div>
 
-        {/* GENERATOR ATTRIBUTION (if present) */}
+        {/* ROBUSTNESS & ADVERSARIAL BENCHMARKS (Bonus Tracks C & G) */}
+        <div id="robustness" className="w-full">
+          <RobustnessCard />
+        </div>
+
+        {/* GENERATOR ATTRIBUTION (Bonus Track B) */}
         {result?.attribution && (
           <div className="w-full">
             <GeneratorAttribution attribution={result.attribution} />
           </div>
         )}
 
-        {/* IMAGE METADATA */}
-        <div className="w-full">
+        {/* IMAGE METADATA & EXIF PROVENANCE (Bonus Track D) */}
+        <div id="provenance" className="w-full">
           <MetadataCard
             exifMetadata={result?.exif_metadata}
             filename={result?.filename || currentFile?.name}
-          />
-        </div>
-
-        {/* FULL EXPLANATION & RAW JSON INSPECTOR */}
-        <div id="explanation" className="w-full">
-          <ExplanationSummary
-            summary={result?.explanation_summary}
-            rawResponse={result}
           />
         </div>
 

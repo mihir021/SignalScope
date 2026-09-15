@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from PIL import Image
+import torch
 
 logger = logging.getLogger("signalscope-region-captioner")
 

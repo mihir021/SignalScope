@@ -1,174 +1,201 @@
-# SignalScope - AI-Generated Image Detector 🔍
+# SignalScope - AI-Generated Image & Deepfake Forensic Detector 🔍
 
-[![CI/CD Pipeline](https://github.com/your-org/signalscope/actions/workflows/deploy.yml/badge.svg)](.github/workflows/deploy.yml)
+[![CI - PR Quality Gate & Conflict Check](https://github.com/your-org/signalscope/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/Frontend-React_18_+_Vite-61DAFB.svg?style=flat&logo=react)](https://vitejs.dev)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
-[![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-E6522C.svg?style=flat&logo=prometheus)](https://prometheus.io/)
-[![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800.svg?style=flat&logo=grafana)](https://grafana.com/)
+[![Tests](https://img.shields.io/badge/Pytest-42%20Passed-brightgreen.svg)](tests/)
 
-**SignalScope** is a high-performance deepfake and AI-generated image detection platform built for **Smart India Hackathon (SIH 2026)**. It classifies images as real or synthetic/fake, backed by automated telemetry, physical sensor consensus gating, and continuous deployment.
-
-### 🌟 Key Capabilities
-- **Dual-Stream Forensic Fusion:** Couples semantic vision (CLIP ViT-B/16) with hardware physics (2D-FFT azimuthal profiles & SRM micro-sensor grain).
-- **Physical Sensor Noise Consensus:** Evaluates native CMOS sensor noise autocorrelation to prevent false positives on smartphone portrait mode, bokeh, and skin smoothing.
-- **Explainability Suite (Bonus Track A):** Visual LayerCAM attention heatmaps, 2D Fourier power spectra, and spatial noise residuals.
-- **Generator Family Attribution (Bonus Track B):** Classifies AI fakes into source architectures (Diffusion, GAN, Latent Upsampling).
-- **Camera EXIF Provenance (Bonus Track D):** Extracts hardware make, camera model, lens parameters, and timestamps.
-- **Multimodal Caption Consistency (Bonus Track E):** Zero-shot text-to-image semantic alignment checking via CLIP text embeddings.
-- **Production CI/CD & Automated Testing:** 38 unit and integration tests passing (100%), Prometheus metrics, and Grafana telemetry.
+**SignalScope** is a dual-brain forensic intelligence platform engineered for **Smart India Hackathon (SIH 2026)** to detect synthetic media, AI-generated imagery, and deepfakes. It fuses semantic visual attention with hardware-level camera sensor physics to output calibrated, human-interpretable verdicts that eliminate false positives on modern smartphones (portrait bokeh, night mode, beauty filters).
 
 ---
 
-## 🏗️ Architecture & Project Structure
+## 🎥 Project Demo Video
+
+Watch the full live demonstration of SignalScope explaining the forensic pipeline, dual-brain consensus, and dashboard:
+🔗 **[Watch SignalScope Demo Video on Google Drive](https://drive.google.com/file/d/193WlmFlnJudfCSkK4fqJmsGhY91_bM2c/view?usp=sharing)**
+
+---
+
+## 🌟 Key Capabilities & PS-2 Compliance
+
+1. **Dual-Brain Consensus Architecture**:
+   - **Brain 1 (Visual Semantic AI):** CLIP ViT-B/16 transformer extracts semantic inconsistencies, warped geometries, and synthetic texture artifacts.
+   - **Brain 2 (Camera Physics AI):** 2D Fast Fourier Transform (FFT) azimuthal power decay + Spatial Rich Model (SRM) sensor noise residual analysis.
+   - **Consensus & Gating:** Autonomous smartphone portrait mode shield suppresses false alarms caused by computational photography.
+2. **Official PS-2 Calibrated Verdicts**:
+   - Categorized strictly as `Likely Authentic (REAL)` or `Likely AI-Generated (SYNTHETIC)`.
+   - Clear certainty metrics: `HIGH CERTAINTY` vs `BORDERLINE`.
+3. **Four-Panel Human Forensic Laboratory**:
+   - **Heatmaps & Attention:** LayerCAM visual focus maps highlighting manipulative regions with interactive blend slider.
+   - **Sensor & Frequency Analysis:** 2D-FFT azimuthal profiles checking for checkerboard upsampling artifacts, and Photo-Response Non-Uniformity (PRNU) sensor grain verification.
+   - **Social Media Robustness:** Pre-validated resilience against WhatsApp compression ($Q=35$), Instagram resizing, mobile screenshots, and adversarial perturbations.
+   - **Provenance & AI Attribution:** EXIF hardware provenance parsing and generator family classification (Midjourney, Stable Diffusion, DALL-E, StyleGAN).
+4. **Natural Language Explanations**:
+   - Real-time forensic diagnostic summary generated via the `/image/summary` engine for non-technical evaluators and court admissibility.
+
+---
+
+## 🏗️ Project Directory Structure
 
 ```
-signalscope/
-├── app/                  # FastAPI backend service
+SignalScope/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # PR quality gate: merge checks, flake8, pytest, docker & frontend build
+│       └── deploy.yml             # Continuous deployment workflow
+├── app/                           # FastAPI backend service
 │   ├── __init__.py
-│   └── main.py          # API endpoints (/, /predict, /metrics)
-├── model/                # ML training & inference pipeline
+│   ├── main.py                    # REST API endpoints (/, /predict, /predict/detailed, /image/summary, /metrics)
+│   └── telemetry.py               # Prometheus metrics & latency telemetry
+├── model/                         # ML core, inference & forensic engines
 │   ├── __init__.py
-│   ├── predict.py       # Model inference interface wrapper
-│   └── README.md        # Model training and weights documentation
-├── report/               # One-page model evaluation report
-│   └── README.md
-├── monitoring/           # Telemetry & observability configuration
-│   └── prometheus.yml   # Prometheus scraping configuration
-├── .github/workflows/    # Automated CI/CD pipelines
-│   └── deploy.yml       # GitHub Actions workflow for EC2 deployment
-├── Dockerfile            # Production-lean Python 3.11-slim container
-├── docker-compose.yml    # Multi-container orchestration (App, Prometheus, Grafana)
-├── requirements.txt      # Pinned Python dependencies
-└── README.md             # Project documentation
+│   ├── classifier.py              # Dual-stream forensic classifier (CLIP + SRM + 2D-FFT)
+│   ├── explain.py                 # LayerCAM attention heatmap & cue generator
+│   ├── frequency.py               # Azimuthal 2D-FFT power spectrum analysis
+│   ├── sensor_noise.py            # SRM filtering & PRNU sensor grain extraction
+│   ├── attribution.py             # Generator family attribution (Diffusion/GAN)
+│   ├── region_captioner.py        # Hotspot extraction & zero-shot CLIP labelling
+│   ├── metadata_extractor.py      # Camera EXIF & provenance parser
+│   ├── defactify_dataset.py       # Balanced dataset pipeline
+│   ├── temperature_scaling.py     # Platt temperature scaling calibrator
+│   └── weights/                   # Trained model weights checkpoint
+├── frontend/                      # Modern React 18 + Vite + Tailwind CSS dashboard
+│   ├── index.html                 # Single-page app entry
+│   ├── package.json               # Frontend dependencies
+│   ├── vite.config.js             # Vite configuration & proxy
+│   └── src/
+│       ├── App.jsx                # Main application orchestrator
+│       ├── index.css              # Bento design tokens, gradients & glassmorphism
+│       ├── services/
+│       │   └── api.js             # Axios client connecting to FastAPI backend
+│       └── components/
+│           ├── Header.jsx         # Sticky pill navbar with live backend status
+│           ├── HeroUpload.jsx     # Drag-and-drop file upload zone with preview
+│           ├── VerdictSummary.jsx # Official PS-2 verdict & latency banner
+│           ├── DualBrainCharts.jsx# Neural breakdown bars & calibrated consensus
+│           ├── ExplanationSummary.jsx # Natural language forensic breakdown
+│           ├── ForensicTabs.jsx   # 4-tab forensic inspection laboratory
+│           ├── ModelAttention.jsx # LayerCAM saliency heatmaps
+│           ├── SpectralChart.jsx  # 2D-FFT power spectrum diagnostics
+│           ├── SensorNoiseVisualizer.jsx # SRM sensor grain & PRNU noise view
+│           ├── RobustnessCard.jsx # Social media compression & tamper retention
+│           ├── MetadataCard.jsx   # EXIF camera & provenance extraction
+│           ├── GeneratorAttribution.jsx # AI family classification
+│           ├── DualStreamDiagram.jsx # Visual pipeline architecture diagram
+│           └── Footer.jsx         # Hackathon attribution & system status
+├── monitoring/                    # Observability & telemetry
+│   ├── prometheus.yml             # Prometheus scrape configuration
+│   └── grafana/                   # Pre-configured Grafana monitoring dashboards
+├── tests/                         # Comprehensive automated test suite (42 tests)
+│   ├── test_api.py                # Endpoint contract, validation & security tests
+│   ├── test_attribution.py        # Generator head & explainability tests
+│   ├── test_explainability.py     # LayerCAM & grounding cue tests
+│   ├── test_image_summary.py      # Natural language summary tests
+│   └── test_pipeline_integrity.py # Split disjointness, feature stability & tensor tests
+├── Dockerfile                     # Multi-stage production container
+├── docker-compose.yml             # Multi-container orchestration (App, Prometheus, Grafana)
+├── requirements.txt               # Pinned Python dependencies
+└── README.md                      # Project documentation
 ```
 
 ---
 
-## 🌐 Network Ports & Services
+## 🚀 How to Run on ANY Computer
 
-| Service | Port | Description | URL |
-| :--- | :--- | :--- | :--- |
-| **FastAPI App** | `8000` | Core image prediction & health API | [http://localhost:8000](http://localhost:8000) |
-| **Interactive Docs** | `8000` | Swagger UI documentation | [http://localhost:8000/docs](http://localhost:8000/docs) |
-| **Metrics** | `8000` | Prometheus scraped metrics endpoint | [http://localhost:8000/metrics](http://localhost:8000/metrics) |
-| **Prometheus** | `9090` | Time-series metrics engine & query UI | [http://localhost:9090](http://localhost:9090) |
-| **Grafana** | `3000` | Real-time monitoring dashboards | [http://localhost:3000](http://localhost:3000) |
+You can run SignalScope on **Windows, macOS, or Linux** using either **Native Setup** (recommended for local development) or **Docker Compose** (one-command setup).
 
----
+### Option A: Native Setup (Python + Node.js)
 
-## 🚀 How to Run Locally with Docker Compose
+#### 1. Prerequisites
+- **Python 3.10, 3.11, or 3.12** installed ([python.org](https://www.python.org/downloads/))
+- **Node.js 18 or 20** installed ([nodejs.org](https://nodejs.org/))
+- **Git** installed
 
-### Prerequisites
-- [Docker Engine](https://docs.docker.com/engine/install/) (20.10+)
-- [Docker Compose](https://docs.docker.com/compose/) (v2.0+)
-
-### 1. Clone & Navigate
+#### 2. Clone the Repository
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/your-org/SignalScope.git
 cd SignalScope
 ```
 
-### 2. Start the Full Stack
-Run the following command to build the Docker image and spin up the backend, Prometheus, and Grafana in detached mode:
+#### 3. Start the Backend API
+Open a terminal in the project root:
+
+```bash
+# Windows (PowerShell):
+python -m venv .venv
+.venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+# macOS / Linux (Bash):
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+*Backend runs at `http://127.0.0.1:8000`. Swagger API docs available at `http://127.0.0.1:8000/docs`.*
+
+#### 4. Start the Frontend Dashboard
+Open a second terminal window:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Frontend runs at `http://localhost:5173`. Open in your browser to start analyzing images!*
+
+---
+
+### Option B: One-Command Docker Compose
+
+If you have Docker Desktop installed, spin up the complete stack with:
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Verify Container Status
-Check that all 3 containers are healthy and running:
+#### Verified Network Endpoints:
+| Service | Local URL | Purpose |
+| :--- | :--- | :--- |
+| **Frontend UI** | [http://localhost:5173](http://localhost:5173) | Interactive Bento forensic analysis dashboard |
+| **FastAPI Backend** | [http://localhost:8000](http://localhost:8000) | Core ML prediction & forensic engine |
+| **Interactive Docs** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI / Swagger interface |
+| **Prometheus** | [http://localhost:9090](http://localhost:9090) | Time-series telemetry metrics engine |
+| **Grafana** | [http://localhost:3000](http://localhost:3000) | Real-time monitoring & throughput dashboards |
+
+---
+
+## 🧪 Testing & CI Quality Gates
+
+SignalScope enforces a strict CI quality gate covering syntax, type safety, test contracts, and frontend builds:
 
 ```bash
-docker compose ps
-```
+# 1. Run Python Linting (Flake8):
+flake8 app model tests --count --select=E9,F63,F7,F82 --show-source --statistics
 
-### 4. Test the API Endpoints
+# 2. Run Automated Pytest Suite (42 tests):
+pytest tests/ -v
 
-#### Health Check
-```bash
-curl http://localhost:8000/
-```
-**Expected Response:**
-```json
-{"status":"healthy","service":"SignalScope API","version":"1.0.0"}
-```
-
-#### Image Prediction (/predict)
-Upload an image to test classification:
-```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "accept: application/json" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@test_image.jpg"
-```
-**Expected Response:**
-```json
-{
-  "filename": "test_image.jpg",
-  "label": "fake",
-  "confidence": 0.94,
-  "status": "success"
-}
-```
-
-#### Metrics Endpoint
-```bash
-curl http://localhost:8000/metrics
-```
-
-### 5. Stop the Stack
-To stop and remove containers while preserving data volumes:
-```bash
-docker compose down
+# 3. Verify Frontend Production Build:
+cd frontend && npm run build
 ```
 
 ---
 
-## 📊 Grafana Dashboard Setup
+## 📡 REST API Reference
 
-1. Open Grafana in your browser at [http://localhost:3000](http://localhost:3000).
-2. Log in with the default credentials:
-   - **Username**: `admin`
-   - **Password**: `admin` *(prompted to update on first login)*
-3. Add Prometheus as a Data Source:
-   - Go to **Connections** > **Data Sources** > **Add data source**.
-   - Select **Prometheus**.
-   - Set **Prometheus server URL** to: `http://prometheus:9090`.
-   - Click **Save & test** (you should see a green success notification).
-4. Import the Pre-Built FastAPI Monitoring Dashboard:
-   - Go to **Dashboards** > **New** > **Import**.
-   - Enter Dashboard ID **`12900`** (*FastAPI Observability*).
-   - Select the **Prometheus** data source you just added.
-   - Click **Import**.
+- `POST /predict`: Fast binary inference (`label`, `confidence`, `probabilities`).
+- `POST /predict/detailed`: Full dual-stream forensic report including LayerCAM heatmap, 2D-FFT frequencies, sensor noise analysis, EXIF metadata, and attribution.
+- `POST /image/summary`: Natural language forensic explanation tailored for human evaluators.
+- `GET /health`: Healthcheck endpoint for load balancers.
+- `GET /metrics`: Prometheus scrape endpoint reporting latency histograms and request counters.
 
 ---
 
-## 🔄 CI/CD Deployment Workflow
-
-Continuous Integration & Continuous Deployment are powered by GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)):
-
-```mermaid
-flowchart LR
-    A[Push to main] --> B[GitHub Runner]
-    B --> C[Build Docker Image]
-    C --> D[SSH to AWS EC2]
-    D --> E[git pull origin main]
-    E --> F[docker compose down]
-    F --> G[docker compose up -d --build]
-    G --> H[Production Active]
-```
-
-### Deployment Flow:
-1. Every commit pushed to `main` triggers the workflow.
-2. The GitHub runner builds the Docker image locally to catch syntax errors or missing dependencies.
-3. If the build passes, the runner establishes an SSH connection to the AWS EC2 instance using stored GitHub Secrets (`EC2_HOST`, `EC2_SSH_KEY`, optional `EC2_USER`).
-4. On the EC2 host, it pulls the latest code and executes:
-   ```bash
-   docker compose down && docker compose up -d --build
-   ```
-
----
-
-## 🛡️ License & Team
-Developed for **Smart India Hackathon (SIH 2026)**.
-All rights reserved.
+## 👥 Authors & Acknowledgments
+Built with ❤️ for **Smart India Hackathon (SIH 2026)**.
+Developed by Team SignalScope.

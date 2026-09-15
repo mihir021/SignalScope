@@ -1,20 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import Hero from './components/Hero';
-import UploadCard from './components/UploadCard';
+import HeroUpload from './components/HeroUpload';
+import VerdictSummary from './components/VerdictSummary';
+import ForensicTabs from './components/ForensicTabs';
 import LoadingState from './components/LoadingState';
-import ResultBanner from './components/ResultBanner';
-import WhyThisResult from './components/WhyThisResult';
-import ModelAttention from './components/ModelAttention';
-import ForensicMetrics from './components/ForensicMetrics';
-import GeneratorAttribution from './components/GeneratorAttribution';
-import MetadataCard from './components/MetadataCard';
-import ExplanationSummary from './components/ExplanationSummary';
-import HowItWorks from './components/HowItWorks';
 import Footer from './components/Footer';
 
 import { checkHealth, analyzeImage, getImageSummary } from './services/api';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Clock, Sparkles } from 'lucide-react';
 
 export default function App() {
   const [apiStatus, setApiStatus] = useState({ online: false, version: null });
@@ -22,8 +15,9 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+  const [latencyMs, setLatencyMs] = useState(null);
 
-  // Check API health on mount and periodically
+  // Periodic API health check
   const pingHealth = async () => {
     try {
       const data = await checkHealth();
@@ -39,48 +33,39 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleNavigate = (sectionId) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const handleAnalyze = async (file, caption) => {
+    if (!file) return;
     setIsLoading(true);
     setError(null);
     setResult(null);
     setCurrentFile(file);
+    const start = performance.now();
 
     try {
-      // Concurrently fetch detailed forensic prediction and whole-image summary
+      // Concurrently execute detailed classification and whole-image summary
       const [responseData, summaryResponse] = await Promise.all([
         analyzeImage(file, caption),
         getImageSummary(file).catch(err => {
-          console.warn('Image summary fetch failed, using fallback:', err);
+          console.warn('Image summary fetch fallback:', err);
           return null;
         })
       ]);
 
-      // If /image/summary provided a response, attach its summary and data
+      const duration = Math.round(performance.now() - start);
+      setLatencyMs(duration);
+
+      // Attach whole-image scene summary from /image/summary
       if (summaryResponse && summaryResponse.summary) {
         responseData.image_summary = summaryResponse.summary;
         responseData.image_summary_data = summaryResponse;
       }
 
       setResult(responseData);
-
-      // Smooth scroll to results
-      setTimeout(() => {
-        const resEl = document.getElementById('results-section');
-        if (resEl) {
-          resEl.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error('Analysis failed:', err);
       setError(
-        err.message || 'Unable to analyze this image. Check that the SignalScope API is running on localhost:8000 and try again.'
+        err.message || 'Unable to connect to SignalScope backend. Please ensure the server is running on localhost:8000.'
       );
     } finally {
       setIsLoading(false);
@@ -91,114 +76,108 @@ export default function App() {
     setResult(null);
     setError(null);
     setCurrentFile(null);
-    handleNavigate('analyzer');
+    setLatencyMs(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="min-h-screen bg-warm-100 flex flex-col justify-between">
+    <div className="min-h-screen flex flex-col justify-between text-slate-800">
       <div>
-        {/* Top Header */}
-        <Header apiStatus={apiStatus} onNavigate={handleNavigate} />
+        {/* Floating Light Header */}
+        <Header
+          apiStatus={apiStatus}
+          onReset={handleReset}
+          hasResult={Boolean(result)}
+        />
 
-        <main className="pb-16">
-          {/* Hero Intro */}
-          <Hero onScrollToAnalyzer={() => handleNavigate('analyzer')} />
+        <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-8">
+          
+          {/* STEP 1: UPLOAD & INGESTION (Shown when no result yet, or during loading) */}
+          {!result && (
+            <div className="animate-in fade-in duration-300">
+              <HeroUpload
+                onAnalyze={handleAnalyze}
+                isLoading={isLoading}
+                error={error}
+              />
+            </div>
+          )}
 
-          {/* Upload & Analyzer Card */}
-          <div className="mt-4">
-            <UploadCard
-              onAnalyze={handleAnalyze}
-              isLoading={isLoading}
-              error={error}
-            />
-          </div>
-
-          {/* Loading Multi-Stage State */}
+          {/* LOADING STATE */}
           {isLoading && <LoadingState />}
 
-          {/* Error State Banner */}
+          {/* ERROR ALERT */}
           {error && !isLoading && (
-            <div className="w-full max-w-2xl mx-auto px-4 sm:px-0 mt-6">
-              <div className="rounded-3xl border border-rose-200 bg-rose-50/80 p-6 shadow-card text-center sm:text-left flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center flex-shrink-0">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-rose-950">
-                    Unable to analyze this image.
-                  </h4>
-                  <p className="text-xs text-rose-800 mt-1 leading-relaxed">
-                    {error}
-                  </p>
-                  <div className="mt-4 flex items-center space-x-3">
-                    <button
-                      onClick={() => handleAnalyze(currentFile)}
-                      className="px-4 py-1.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-colors flex items-center space-x-1"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Try Again</span>
-                    </button>
-                    <button
-                      onClick={handleReset}
-                      className="px-4 py-1.5 rounded-full bg-white hover:bg-rose-100 text-rose-900 border border-rose-200 text-xs font-semibold shadow-sm transition-colors"
-                    >
-                      Analyze another image
-                    </button>
-                  </div>
+            <div className="w-full max-w-2xl mx-auto p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start space-x-3 shadow-sm">
+              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 text-xs">
+                <strong className="text-rose-950 block font-bold mb-0.5 text-sm">Analysis Request Failed</strong>
+                <span className="text-rose-800">{error}</span>
+                <div className="mt-3 flex items-center space-x-2">
+                  <button
+                    onClick={() => handleAnalyze(currentFile)}
+                    className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-colors flex items-center space-x-1 shadow-sm"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Try Again</span>
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-medium transition-colors border border-slate-200 shadow-sm"
+                  >
+                    Select Another Image
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Analysis Results View */}
+          {/* STEP 2 & 3: RESULTS + FORENSIC DEEP-DIVE TABS */}
           {result && !isLoading && (
-            <div id="results-section" className="mt-12 space-y-6 animate-in fade-in duration-500">
-              {/* Primary Verdict & Confidence */}
-              <ResultBanner result={result} onReset={handleReset} />
-
-              {/* Full Model Explanation — MOVED TO TOP OF RESULTS (fetched from /image/summary) */}
-              <ExplanationSummary
-                summary={result.image_summary || result.explanation_summary}
-                imageSummaryData={result.image_summary_data}
-                forensicSummary={result.explanation_summary}
-                rawResponse={result}
+            <div className="space-y-8 animate-in fade-in duration-500">
+              
+              {/* STEP 2: CLEAR VERDICT & PLAIN-ENGLISH BREAKDOWN */}
+              <VerdictSummary
+                result={result}
+                onReset={handleReset}
+                latencyMs={latencyMs}
               />
 
-              {/* 3 Evidence Cards */}
-              <WhyThisResult explanationCues={result.explanation_cues} />
+              {/* STEP 3: ORGANIZED FORENSIC TABS */}
+              <div className="pt-2">
+                <div className="mb-4">
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Forensic Evidence & Physical Verification Explorer
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Inspect visual attention saliency heatmaps, 2D-FFT optical spectra, CMOS sensor PRNU, and model provenance
+                  </p>
+                </div>
 
-              {/* Model Attention Heatmap */}
-              <ModelAttention
-                originalImageFile={currentFile}
-                overlayBase64={result.overlay_base64}
-                explanationCues={result.explanation_cues}
-              />
+                <ForensicTabs
+                  result={result}
+                  currentFile={currentFile}
+                />
+              </div>
 
-              {/* Forensic Metrics Grid */}
-              <ForensicMetrics
-                explanationCues={result.explanation_cues}
-                prediction={result}
-              />
+              {/* Bottom Quick Action */}
+              <div className="pt-6 pb-4 text-center border-t border-slate-200/80">
+                <button
+                  onClick={handleReset}
+                  className="px-6 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-300/90 text-slate-800 font-bold text-xs transition-all shadow-sm flex items-center space-x-2 mx-auto hover:border-slate-400"
+                >
+                  <RefreshCw className="w-4 h-4 text-indigo-600" />
+                  <span>Analyze Another Image or Try Different Sample</span>
+                </button>
+              </div>
 
-              {/* Generator Attribution (if returned) */}
-              {result.attribution && (
-                <GeneratorAttribution attribution={result.attribution} />
-              )}
-
-              {/* Image Metadata */}
-              <MetadataCard
-                exifMetadata={result.exif_metadata}
-                filename={result.filename}
-              />
             </div>
           )}
 
-          {/* How It Works Explainer */}
-          <HowItWorks />
         </main>
       </div>
 
-      {/* Footer */}
+      {/* Light Refined Footer */}
       <Footer />
     </div>
   );
