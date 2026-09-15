@@ -11,7 +11,7 @@ import sys
 # Ensure project root is in sys.path when script is executed directly
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import logging
-from typing import Dict, Any, Union, Optional
+from typing import Dict, Any, Union, Optional, List, Sequence
 from PIL import Image, ImageOps
 import numpy as np
 import torch
@@ -21,6 +21,74 @@ from model.dataset import get_transforms
 from model.forensic import ForensicExtractor
 
 logger = logging.getLogger("signalscope-model")
+
+
+SUMMARY_SUBJECT_CANDIDATES = [
+    "person",
+    "face",
+    "group of people",
+    "child",
+    "animal",
+    "cat",
+    "dog",
+    "bird",
+    "car",
+    "motorcycle",
+    "bicycle",
+    "building",
+    "house",
+    "street",
+    "tree",
+    "flower",
+    "food",
+    "product",
+    "phone",
+    "laptop",
+    "text document",
+    "chart or graph",
+    "landscape",
+    "water",
+    "sky",
+]
+
+SUMMARY_SCENE_CANDIDATES = [
+    "indoor room",
+    "outdoor scene",
+    "city street",
+    "natural landscape",
+    "portrait setting",
+    "close-up shot",
+    "tabletop scene",
+    "vehicle scene",
+    "document or screenshot",
+    "digital illustration",
+    "low light scene",
+]
+
+SUMMARY_STYLE_CANDIDATES = [
+    "natural camera photo",
+    "AI-generated or digital artwork",
+    "cartoon or anime image",
+    "screenshot or UI capture",
+    "document scan",
+    "studio product photo",
+    "highly edited image",
+]
+
+COLOR_NAMES = {
+    "black": (20, 20, 20),
+    "white": (235, 235, 235),
+    "gray": (128, 128, 128),
+    "red": (190, 45, 45),
+    "orange": (220, 120, 35),
+    "yellow": (225, 200, 55),
+    "green": (55, 150, 75),
+    "cyan": (45, 170, 180),
+    "blue": (55, 95, 190),
+    "purple": (125, 70, 170),
+    "pink": (220, 115, 165),
+    "brown": (125, 80, 45),
+}
 
 
 def extract_exif_metadata(image: Image.Image) -> Dict[str, Any]:
@@ -40,6 +108,32 @@ def extract_exif_metadata(image: Image.Image) -> Dict[str, Any]:
         return {"has_exif": True, **tags}
     except Exception:
         return {"has_exif": False, "device": "unknown / stripped"}
+
+
+def _nearest_color_name(rgb: Sequence[int]) -> str:
+    """
+    Maps an RGB triplet to a compact human-readable color name.
+    """
+    r, g, b = [int(v) for v in rgb[:3]]
+    best_name = "unknown"
+    best_distance = float("inf")
+    for name, target in COLOR_NAMES.items():
+        tr, tg, tb = target
+        distance = (r - tr) ** 2 + (g - tg) ** 2 + (b - tb) ** 2
+        if distance < best_distance:
+            best_name = name
+            best_distance = distance
+    return best_name
+
+
+def _dedupe_preserve_order(values: Sequence[str]) -> List[str]:
+    seen = set()
+    ordered = []
+    for value in values:
+        if value not in seen:
+            ordered.append(value)
+            seen.add(value)
+    return ordered
 
 
 class ImageClassifier:
@@ -81,6 +175,125 @@ class ImageClassifier:
         except Exception as e:
             logger.error(f"Error loading model: {e}", exc_info=True)
             self.is_loaded = False
+
+    def _ensure_clip_text_encoder(self):
+        """
+        Lazily loads CLIP text components used for caption matching and image summaries.
+        """
+        from transformers import CLIPTokenizer, CLIPTextModelWithProjection
+        if not hasattr(self, "_tokenizer") or self._tokenizer is None:
+            self._tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch16")
+        if not hasattr(self, "_text_model") or self._text_model is None:
+            self._text_model = CLIPTextModelWithProjection.from_pretrained("openai/clip-vit-base-patch16").to(self.device).eval()
+
+    def _encode_image_embedding(self, image: Image.Image) -> torch.Tensor:
+        """
+        Encodes a PIL image into a normalized CLIP image embedding.
+        """
+        pixel_tensor = self.transform(image).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            img_out = self.model.vision_encoder(pixel_values=pixel_tensor)
+            img_embed = img_out.image_embeds
+            img_embed = img_embed / img_embed.norm(dim=-1, keepdim=True)
+        return img_embed
+
+    def _rank_clip_labels(
+        self,
+        image_embed: torch.Tensor,
+        labels: Sequence[str],
+        template: str,
+        top_k: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Ranks a small fixed vocabulary against the image embedding using CLIP similarity.
+        """
+        self._ensure_clip_text_encoder()
+        prompts = [template.format(label=label) for label in labels]
+        inputs = self._tokenizer(
+            prompts,
+            padding=True,
+            truncation=True,
+            max_length=77,
+            return_tensors="pt"
+        ).to(self.device)
+
+        with torch.no_grad():
+            txt_out = self._text_model(**inputs)
+            txt_embed = txt_out.text_embeds
+            txt_embed = txt_embed / txt_embed.norm(dim=-1, keepdim=True)
+            similarities = torch.matmul(image_embed, txt_embed.t()).squeeze(0)
+            probs = torch.softmax(similarities * 10.0, dim=-1)
+
+        count = min(top_k, len(labels))
+        top_indices = torch.topk(probs, k=count).indices.detach().cpu().tolist()
+        return [
+            {
+                "label": labels[idx],
+                "score": round(float(probs[idx].detach().cpu().item()), 4)
+            }
+            for idx in top_indices
+        ]
+
+    def _extract_visual_profile(self, image: Image.Image) -> Dict[str, Any]:
+        """
+        Computes lightweight whole-image attributes that do not depend on model weights.
+        """
+        width, height = image.size
+        orientation = "square"
+        if width > height * 1.15:
+            orientation = "landscape"
+        elif height > width * 1.15:
+            orientation = "portrait"
+
+        arr = np.array(image.resize((128, 128))).astype(np.float32) / 255.0
+        luminance = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
+        brightness = float(luminance.mean())
+        contrast = float(luminance.std())
+        channel_max = arr.max(axis=2)
+        channel_min = arr.min(axis=2)
+        saturation = float(((channel_max - channel_min) / (channel_max + 1e-6)).mean())
+
+        gray = (luminance * 255.0).astype(np.float32)
+        grad_y, grad_x = np.gradient(gray)
+        edge_strength = float(np.sqrt(grad_x ** 2 + grad_y ** 2).mean() / 255.0)
+
+        palette_image = image.resize((80, 80)).convert("P", palette=Image.Palette.ADAPTIVE, colors=5)
+        palette = palette_image.getpalette() or []
+        color_counts = palette_image.getcolors(maxcolors=6400) or []
+        color_counts = sorted(color_counts, reverse=True)[:5]
+        dominant_colors = []
+        for count, palette_index in color_counts:
+            base = palette_index * 3
+            if base + 2 < len(palette):
+                rgb = tuple(palette[base:base + 3])
+                dominant_colors.append(_nearest_color_name(rgb))
+
+        dominant_colors = _dedupe_preserve_order(dominant_colors)[:3]
+
+        lighting = "balanced"
+        if brightness < 0.28:
+            lighting = "dark"
+        elif brightness > 0.72:
+            lighting = "bright"
+
+        detail_level = "moderate"
+        if edge_strength < 0.025:
+            detail_level = "smooth / low detail"
+        elif edge_strength > 0.08:
+            detail_level = "busy / high detail"
+
+        return {
+            "width": width,
+            "height": height,
+            "orientation": orientation,
+            "lighting": lighting,
+            "detail_level": detail_level,
+            "dominant_colors": dominant_colors,
+            "brightness": round(brightness, 4),
+            "contrast": round(contrast, 4),
+            "saturation": round(saturation, 4),
+            "edge_strength": round(edge_strength, 4),
+        }
 
     def compute_text_similarity(self, image: Image.Image, text: str) -> float:
         """

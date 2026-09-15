@@ -39,6 +39,21 @@ env/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
 
+# Python test and coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # Environment variables & secrets
 .env
 .env.local
