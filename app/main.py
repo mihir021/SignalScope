@@ -12,10 +12,12 @@ Designed for SIH 2026 AI-Generated Image Detection.
 from typing import Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from PIL import Image
 import io
+import os
 import logging
 
 from model.predict import classifier
@@ -60,12 +62,11 @@ app.add_middleware(
 # ------------------------------------------------------------------------------
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
-
 # ------------------------------------------------------------------------------
 # Endpoints
 # ------------------------------------------------------------------------------
 
-@app.get("/", summary="Health Check", tags=["Health"])
+@app.get("/health", summary="Health Check", tags=["Health"])
 async def health_check():
     """
     Health check endpoint for container orchestrators, Docker healthchecks,
@@ -77,6 +78,23 @@ async def health_check():
         "service": "SignalScope API",
         "version": "1.0.0"
     }
+
+# ------------------------------------------------------------------------------
+# Serve Frontend UI (Production mode)
+# ------------------------------------------------------------------------------
+frontend_dist = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(frontend_dist):
+    logger.info(f"Frontend build found at {frontend_dist}, mounting to serve full-stack UI.")
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+
+    @app.get("/{catchall:path}")
+    async def serve_frontend(catchall: str):
+        file_path = os.path.join(frontend_dist, catchall)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(frontend_dist, "index.html"))
+else:
+    logger.warning("No frontend build found. Running in API-only mode.")
 
 
 @app.post("/predict", summary="Predict Real vs Fake Image", tags=["Inference"])

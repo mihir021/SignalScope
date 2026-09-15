@@ -1,65 +1,49 @@
 # ==============================================================================
-# Dockerfile for SignalScope API
-# Multi-stage-ready production-lean container for FastAPI application
-# Base Image: Official Python 3.11 Debian-slim for minimal attack surface and size
+# Dockerfile for SignalScope Full-Stack Deployment
+# Multi-stage build: Builds Vite frontend, then copies it to FastAPI container
 # ==============================================================================
 
-FROM python:3.11-slim
+# ------------------------------------------------------------------------------
+# Stage 1: Build the React Frontend
+# ------------------------------------------------------------------------------
+FROM node:20 AS frontend-builder
+WORKDIR /build
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
 # ------------------------------------------------------------------------------
-# Environment Variables
-# - PYTHONDONTWRITEBYTECODE: 1 prevents Python from writing .pyc files
-# - PYTHONUNBUFFERED: 1 ensures real-time log streaming without buffer delays
+# Stage 2: SignalScope API (Python)
 # ------------------------------------------------------------------------------
+FROM python:3.11-slim
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# ------------------------------------------------------------------------------
-# System Dependencies
-# Install curl for container HEALTHCHECK verification
-# Clean apt caches afterwards to keep image size small
-# ------------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# ------------------------------------------------------------------------------
-# Dependency Installation Layer
-# Copy requirements.txt separately to leverage Docker layer caching
-# ------------------------------------------------------------------------------
 COPY requirements.txt /app/requirements.txt
 
-# Install pip dependencies with --no-cache-dir to minimize layer size
-# Pre-install CPU-only PyTorch and torchvision to prevent downloading ~6 GB of
-# unused CUDA/NVIDIA libraries on CPU-based instances (e.g., AWS EC2 t3/c6i)
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
-# ------------------------------------------------------------------------------
-# Application Code Layer
-# Copy the app package and model package into the container workdir
-# ------------------------------------------------------------------------------
 COPY app /app/app
 COPY model /app/model
 COPY tests /app/tests
 
-# ------------------------------------------------------------------------------
-# Network and Container Configuration
-# Expose port 8000 for the Uvicorn ASGI server
-# ------------------------------------------------------------------------------
+# Copy the built React UI from Stage 1 so FastAPI can serve it
+COPY --from=frontend-builder /build/dist /app/frontend/dist
+
 EXPOSE 8000
 
-# Container healthcheck testing the root / endpoint (generous start-period for PyTorch/CLIP loading)
 HEALTHCHECK --interval=20s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# ------------------------------------------------------------------------------
-# Entrypoint Execution
-# Start FastAPI using Uvicorn on 0.0.0.0:8000
-# ------------------------------------------------------------------------------
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

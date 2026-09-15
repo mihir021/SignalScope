@@ -167,6 +167,11 @@ docker compose up -d --build
 | **Prometheus** | [http://localhost:9090](http://localhost:9090) | Time-series telemetry metrics engine |
 | **Grafana** | [http://localhost:3000](http://localhost:3000) | Real-time monitoring & throughput dashboards |
 
+#### Health Check
+```bash
+curl http://localhost:8000/health
+```
+
 ---
 
 ## 🧪 Testing & CI Quality Gates

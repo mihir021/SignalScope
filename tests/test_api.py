@@ -38,9 +38,9 @@ def create_test_image_bytes(format_name: str = "JPEG", size=(64, 64), color=(50,
 
 def test_health_check_endpoint():
     """
-    Verifies that GET / returns HTTP 200 OK and confirms service health status.
+    Test the health check endpoint returns 200 OK and expected structure.
     """
-    response = client.get("/")
+    response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
