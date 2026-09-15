@@ -159,6 +159,19 @@ class ImageClassifier:
             logger.info(f"Initializing DualStreamClassifier on {self.device}...")
             self.model = DualStreamClassifier(freeze_backbone=True).to(self.device)
 
+            if not os.path.exists(self.model_path):
+                logger.info(f"Model weights not found locally at '{self.model_path}'. Attempting to download from Google Drive...")
+                try:
+                    import gdown
+                    os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+                    # Use the provided Google Drive file ID
+                    gdown.download(id="19ujCWVAGjUdAlvGA2d4b-gbR6xpaojhW", output=self.model_path, quiet=False)
+                    logger.info("Successfully downloaded best_classifier.pt from Google Drive.")
+                except ImportError:
+                    logger.warning("gdown is not installed. Run 'pip install gdown' to auto-download weights.")
+                except Exception as e:
+                    logger.error(f"Failed to download weights from Google Drive: {e}")
+            
             if os.path.exists(self.model_path):
                 checkpoint = torch.load(self.model_path, map_location=self.device, weights_only=False)
                 state_dict = checkpoint.get("model_state_dict", checkpoint)
