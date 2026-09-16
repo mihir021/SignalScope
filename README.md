@@ -23,7 +23,11 @@ The SignalScope forensic dashboard is currently live and accessible from anywher
 🔗 **[Live Demo URL: http://18.212.83.78:8000](http://18.212.83.78:8000)**
 
 ---
+## 🧠 Model Weights & Classifier
+The core dual-stream forensic classifier (CLIP + SRM + 2D-FFT) and its pre-trained weights are hosted separately. You can access the classifier repository and model files here:
+🔗 **[SignalScope Classifier & Weights](https://drive.google.com/file/d/19ujCWVAGjUdAlvGA2d4b-gbR6xpaojhW/view?usp=drive_link)**
 
+---
 ## 🌟 Key Capabilities & PS-2 Compliance
 
 1. **Dual-Brain Consensus Architecture**:
